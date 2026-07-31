@@ -27,7 +27,19 @@
       "PowerShell(\"--- OneDrive ---\"; Get-ChildItem \"$env:USERPROFILE\\\\OneDrive\" -ErrorAction SilentlyContinue | Select-Object -First 10 Name; \"--- Desktop 경로 ---\"; \\(Get-ItemProperty 'HKCU:\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\User Shell Folders'\\).Desktop; \"--- 섀도우 복사본 ---\"; try { vssadmin list shadows 2>$null | Select-String 'creation time' | Select-Object -First 5 } catch { 'vssadmin 불가\\(관리자 권한 필요\\)' })",
       "PowerShell(\"--- VS Code Local History ---\"; $h=\"$env:APPDATA\\\\Code\\\\User\\\\History\"; if\\(Test-Path $h\\){ Get-ChildItem -Recurse -File $h -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 15 LastWriteTime,Name,FullName | Format-Table -AutoSize } else { \"없음: $h\" }; \"--- Cursor/기타 에디터 ---\"; @\\(\"$env:APPDATA\\\\Cursor\\\\User\\\\History\",\"$env:APPDATA\\\\Code - Insiders\\\\User\\\\History\"\\) | ForEach-Object { if\\(Test-Path $_\\){ \"있음: $_\" } })",
       "PowerShell(\"--- metro cache ---\"; Get-ChildItem \"$env:TEMP\" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'metro|haste|react' } | Select-Object LastWriteTime,FullName | Format-Table -AutoSize; \"--- start.log 최근 ---\"; Get-Content \"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\\\\.expo\\\\dev\\\\logs\\\\start.log\" -Tail 15 -ErrorAction SilentlyContinue)",
-      "PowerShell($ErrorActionPreference='Continue'; git --version; git init -q; git add -A; git commit -q -m \"chore: 7/23 스냅샷 기준 베이스라인 커밋\"; git log --oneline -1; \"--- tracked file 수 ---\"; \\(git ls-files | Measure-Object -Line\\).Lines)"
+      "PowerShell($ErrorActionPreference='Continue'; git --version; git init -q; git add -A; git commit -q -m \"chore: 7/23 스냅샷 기준 베이스라인 커밋\"; git log --oneline -1; \"--- tracked file 수 ---\"; \\(git ls-files | Measure-Object -Line\\).Lines)",
+      "PowerShell(git -C \"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\" commit -q -m \"docs: �ֽ� ��ȹ ���� �ݿ� \\(2026-07-30 ����\\)\")",
+      "PowerShell(git -C \"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\" log --oneline)",
+      "PowerShell(git -C $d status --short)",
+      "PowerShell(git -C $d diff --stat)",
+      "PowerShell(git -C $d diff --cached --stat)",
+      "PowerShell($d=\"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\")",
+      "PowerShell(\"--- unstaged diff stat ---\")",
+      "PowerShell(\"--- staged diff stat ---\")",
+      "PowerShell(git -C \"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\" diff -- .claude/settings.local.json)",
+      "PowerShell(git -C $d add .claude/settings.local.json)",
+      "PowerShell(git -C $d log --oneline)",
+      "PowerShell(\"--- ���� ���� ---\")"
     ]
   }
 }
