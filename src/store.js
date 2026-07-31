@@ -7,13 +7,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { AppState } from 'react-native';
 import { recordRepo } from './repository';
 import { petRepo } from './petRepo';
-
-// The mock header shows "7월 22일 수"; keep the working date in sync with it so
-// the home summary reflects the same day. Swap for a live date once the
-// calendar/date-navigation screens land.
-export const TODAY_DATE = '2026-07-22';
+import { todayYmd } from './date';
 
 const StoreContext = createContext(null);
 
@@ -71,6 +68,31 @@ export function summarizeDay(records) {
 export function StoreProvider({ children }) {
   const [tab, setTab] = useState('home');
 
+  // The working date. A health diary is left open overnight, so the app can't
+  // read "today" once at launch and keep it forever — re-read it whenever the
+  // app comes back to the foreground, and roll it over at the next midnight
+  // while the app stays open.
+  const [today, setToday] = useState(todayYmd);
+
+  useEffect(() => {
+    const sync = () => setToday((cur) => (cur === todayYmd() ? cur : todayYmd()));
+
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') sync();
+    });
+
+    // Fire just after the upcoming local midnight; the effect re-runs on the
+    // new `today` and schedules the following day.
+    const midnight = new Date();
+    midnight.setHours(24, 0, 1, 0);
+    const timer = setTimeout(sync, midnight.getTime() - Date.now());
+
+    return () => {
+      sub.remove();
+      clearTimeout(timer);
+    };
+  }, [today]);
+
   const [pets, setPets] = useState([]);
   const [currentPetId, setCurrentPetId] = useState(null);
   const [showPetMenu, setShowPetMenu] = useState(false);
@@ -113,8 +135,8 @@ export function StoreProvider({ children }) {
       setRecords([]);
       return;
     }
-    setRecords(await recordRepo.listByDate(petId, TODAY_DATE));
-  }, [petId]);
+    setRecords(await recordRepo.listByDate(petId, today));
+  }, [petId, today]);
 
   useEffect(() => {
     refreshToday();
@@ -223,7 +245,7 @@ export function StoreProvider({ children }) {
       for (const e of entries) {
         const rec = await recordRepo.add({
           petId,
-          recordDate: TODAY_DATE,
+          recordDate: today,
           recordType: e.recordType,
           data: e.data || {},
           memo: e.memo ?? null,
@@ -236,7 +258,7 @@ export function StoreProvider({ children }) {
       setCondStage('main');
       showSnack(msg);
     },
-    [petId, refreshToday, showSnack]
+    [petId, today, refreshToday, showSnack]
   );
 
   const addRecord = useCallback((entry, msg) => addRecords([entry], msg), [addRecords]);
@@ -260,6 +282,7 @@ export function StoreProvider({ children }) {
   const value = {
     tab,
     setTab,
+    today,
     pets,
     pet,
     currentPet,

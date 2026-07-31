@@ -59,7 +59,23 @@
       "PowerShell(git -C $d add -A)",
       "PowerShell(git -C $d rebase origin/main 2>&1)",
       "PowerShell(git -C $d status --short --branch)",
-      "PowerShell(\"--- ���� �� ---\")"
+      "PowerShell(\"--- ���� �� ---\")",
+      "PowerShell(git -C $d rev-parse --short HEAD)",
+      "PowerShell(git -C $d rev-parse --short origin/main)",
+      "PowerShell(git -C $d log --oneline -6)",
+      "PowerShell(git -C $d rev-list --left-right --count origin/main...HEAD)",
+      "PowerShell(\"--- HEAD ---\")",
+      "PowerShell(\"--- origin/main ---\")",
+      "PowerShell(\"--- �α� ---\")",
+      "PowerShell(\"--- ahead/behind ---\")",
+      "PowerShell($ErrorActionPreference='Continue'; $env:GIT_TERMINAL_PROMPT=0; \"--- 실제 원격 refs ---\"; git ls-remote https://github.com/GoKyoungEun/petApp.git 2>&1 | Select-Object -First 10; \"--- reflog\\(원격 추적\\) ---\"; git -C \"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\" reflog show origin/main 2>&1 | Select-Object -First 5)",
+      "PowerShell(winget install --id GitHub.cli --silent --accept-source-agreements --accept-package-agreements)",
+      "PowerShell(git -C $d switch -c phase1/foundation)",
+      "PowerShell(git -C $d branch --show-current)",
+      "PowerShell(git -C $d commit -q -F $m)",
+      "PowerShell(git -C $d log --oneline -3)",
+      "PowerShell($m=\"C:\\\\Users\\\\cjddu\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-cjddu-Desktop-project-petApp\\\\3b00ee15-fc88-4124-be84-b7193f48c101\\\\scratchpad\\\\commitmsg.txt\")",
+      "PowerShell(\"--- ��ŷƮ�� ---\")"
     ]
   }
 }

@@ -4,6 +4,7 @@ import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
 import { recordRepo } from '../repository';
+import { formatDay, parseYmd } from '../date';
 
 // Item tabs, fixed order per 05_UI_UX. key = recordType (healthPhoto has no
 // records yet — photos aren't attached to records in this pass).
@@ -27,11 +28,10 @@ const SHEET_KEY = {
   walk: 'walk', condition: 'condition', weight: 'weight', note: 'memo',
 };
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 function formatDate(s) {
-  const d = new Date(s);
+  const d = parseYmd(s);
   if (isNaN(d.getTime())) return s;
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
+  return formatDay(s);
 }
 
 function describe(type, r) {

@@ -2,9 +2,10 @@ import React from 'react';
 import { View, Text, Image, ScrollView, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
-import { useStore, TODAY_DATE } from '../store';
+import { useStore } from '../store';
 import { recordRepo } from '../repository';
 import { speciesMeta } from '../pets';
+import { addDays, formatHeader } from '../date';
 
 // 강아지 = 산책 / 고양이 = 컨디션 (02_MVP_Requirement §3)
 const QUICK_BASE = [
@@ -23,16 +24,8 @@ const SAME_TYPES = {
   cat: ['meal', 'stool', 'urine', 'condition'],
 };
 
-// The calendar day before TODAY_DATE, as YYYY-MM-DD.
-const YESTERDAY = (() => {
-  const d = new Date(TODAY_DATE);
-  d.setDate(d.getDate() - 1);
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-})();
-
 export default function HomeScreen() {
-  const { pet, species, currentPet, petId, setShowPetMenu, openSheet, todayItems, addRecords, showToast, setTab } =
+  const { pet, species, currentPet, petId, today, setShowPetMenu, openSheet, todayItems, addRecords, showToast, setTab } =
     useStore();
 
   const meta = speciesMeta(species);
@@ -44,7 +37,7 @@ export default function HomeScreen() {
   const sameAsUsual = async () => {
     if (!petId) return;
     const types = SAME_TYPES[species] || SAME_TYPES.dog;
-    const prev = await recordRepo.listByDate(petId, YESTERDAY);
+    const prev = await recordRepo.listByDate(petId, addDays(today, -1));
     const copy = prev
       .filter((r) => types.includes(r.recordType))
       .map((r) => {
@@ -77,7 +70,7 @@ export default function HomeScreen() {
           <Text style={styles.petName}>{pet}</Text>
           <Icon name="chevron-down" size={16} color={colors.textMuted} />
         </Pressable>
-        <Text style={styles.dateText}>7월 22일 수</Text>
+        <Text style={styles.dateText}>{formatHeader(today)}</Text>
       </View>
 
       {/* same as usual */}

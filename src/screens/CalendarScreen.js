@@ -2,18 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
-import { useStore, summarizeDay, TODAY_DATE } from '../store';
+import { useStore, summarizeDay } from '../store';
 import { recordRepo } from '../repository';
+import { WEEKDAYS, formatDay, parseYmd, toYmd } from '../date';
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
-
-const pad = (n) => String(n).padStart(2, '0');
-const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`; // m is 0-indexed
-
-function formatSelected(dateStr) {
-  const d = new Date(dateStr);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
-}
+const ymd = (y, m, d) => toYmd(new Date(y, m, d)); // m is 0-indexed
 
 // Build a 6-row week grid of day numbers (null for leading/trailing blanks).
 function monthGrid(year, month) {
@@ -29,11 +22,15 @@ function monthGrid(year, month) {
 }
 
 export default function CalendarScreen() {
-  const { petId, setTab } = useStore();
+  const { petId, today, setTab } = useStore();
 
-  const [ty, tm] = [Number(TODAY_DATE.slice(0, 4)), Number(TODAY_DATE.slice(5, 7)) - 1];
-  const [view, setView] = useState({ year: ty, month: tm });
-  const [selected, setSelected] = useState(TODAY_DATE);
+  // Opens on the current month with today selected; the user's later navigation
+  // is theirs to keep, so a midnight rollover must not yank the view back.
+  const [view, setView] = useState(() => {
+    const d = parseYmd(today);
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+  const [selected, setSelected] = useState(today);
   const [recordDates, setRecordDates] = useState(new Set());
   const [dayRecords, setDayRecords] = useState([]);
 
@@ -99,7 +96,7 @@ export default function CalendarScreen() {
             {row.map((day, ci) => {
               if (day == null) return <View key={ci} style={styles.cell} />;
               const dateStr = ymd(view.year, view.month, day);
-              const isToday = dateStr === TODAY_DATE;
+              const isToday = dateStr === today;
               const isSel = dateStr === selected;
               const has = recordDates.has(dateStr);
               return (
@@ -136,7 +133,7 @@ export default function CalendarScreen() {
 
       {/* selected day panel */}
       <View style={styles.panelHead}>
-        <Text style={styles.panelDate}>{formatSelected(selected)}</Text>
+        <Text style={styles.panelDate}>{formatDay(selected)}</Text>
         {items.length > 0 && (
           <Pressable style={styles.moreLink} onPress={() => setTab('records')} hitSlop={8}>
             <Text style={styles.moreLinkText}>전체 기록</Text>
