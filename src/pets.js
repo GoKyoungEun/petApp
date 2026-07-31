@@ -1,0 +1,33 @@
+import { colors } from './theme';
+
+// Species → presentation. Kept out of stored pet data so it stays derivable.
+export function speciesMeta(species) {
+  return species === 'cat'
+    ? { icon: 'cat', bg: '#E9F1F8', fg: colors.blue, label: '고양이' }
+    : { icon: 'dog', bg: colors.peach, fg: colors.primary, label: '강아지' };
+}
+
+// Whole-years age from a birthDate (YYYY-MM-DD); estimated dates still work.
+export function ageYears(birthDate) {
+  if (!birthDate) return null;
+  const b = new Date(birthDate);
+  if (isNaN(b.getTime())) return null;
+  const now = new Date();
+  let y = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) y--;
+  return Math.max(0, y);
+}
+
+// birthDate string for a given estimated age in years.
+export function birthDateFromAge(years) {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - years);
+  return d.toISOString().slice(0, 10);
+}
+
+export function petSubtitle(pet) {
+  const { label } = speciesMeta(pet.species);
+  const age = ageYears(pet.birthDate);
+  return age == null ? label : `${label} · ${age}살`;
+}

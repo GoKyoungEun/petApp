@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -)",
+      "Bash(npm ping *)",
+      "Bash(npm -v)",
+      "Bash(npx --yes create-expo-app@latest . --template blank)",
+      "Bash(npx --yes create-expo-app@latest petapp-scaffold --template blank)",
+      "Bash(npx expo *)",
+      "WebFetch(domain:docs.expo.dev)",
+      "Bash(ipconfig getifaddr *)",
+      "Bash(npx --yes qrcode -o /private/tmp/claude-501/-Users-spring-Library-CloudStorage-GoogleDrive-qwe3364-gmail-com--------petApp/48d960d6-e2c2-4d0c-8395-fedfc95ef2a0/scratchpad/expo-qr.png exp://10.10.202.186:8081)",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "Bash(npm install *)",
+      "PowerShell(npx expo start --tunnel=$false)",
+      "PowerShell(node .\\\\node_modules\\\\expo\\\\bin\\\\cli start)",
+      "PowerShell($conn = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue; if \\($conn\\) { $conn.OwningProcess | Select-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue; \"Stopped PID $_\" } } else { \"No listener on 8081\" })",
+      "PowerShell(node .\\\\node_modules\\\\expo\\\\bin\\\\cli start --tunnel)",
+      "PowerShell(npm install --save-dev @expo/ngrok@^4.1.0)",
+      "PowerShell($exe = \".\\\\node_modules\\\\@expo\\\\ngrok-bin-win32-x64\\\\ngrok.exe\"; & $exe --version; \"----try http tunnel 8081 for 15s----\"; $p = Start-Process -FilePath $exe -ArgumentList \"http\",\"8081\",\"--log=stdout\" -RedirectStandardOutput \"$env:TEMP\\\\ngroktest.log\" -PassThru -NoNewWindow; Start-Sleep -Seconds 15; Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; Get-Content \"$env:TEMP\\\\ngroktest.log\" -Tail 30)",
+      "PowerShell($conn = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue; if \\($conn\\) { $conn.OwningProcess | Select-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue } }; \"cleared\")",
+      "PowerShell(try { $r = Invoke-RestMethod -Uri \"http://127.0.0.1:4040/api/tunnels\" -ErrorAction Stop; $r.tunnels | Select-Object public_url, proto } catch { \"ngrok API not reachable: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(Get-ChildItem -Recurse -File C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\\\\src | Select-Object @{n='Path';e={$_.FullName.Replace\\('C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\\\\',''\\)}},Length,LastWriteTime)",
+      "PowerShell($p=\"C:\\\\Users\\\\cjddu\\\\.claude\\\\projects\\\\C--Users-cjddu-Desktop-project-petApp\"; if\\(Test-Path $p\\){ Get-ChildItem -Recurse -File $p | Sort-Object LastWriteTime -Descending | Select-Object LastWriteTime,@{n='MB';e={[math]::Round\\($_.Length/1MB,2\\)}},Name | Format-Table -AutoSize } else { \"no transcript dir\" })",
+      "PowerShell(\"--- Downloads \\(petApp 관련\\) ---\"; Get-ChildItem -Force \"$env:USERPROFILE\\\\Downloads\" -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'pet|app|project' } | Sort-Object LastWriteTime -Descending | Select-Object LastWriteTime,@{n='MB';e={[math]::Round\\($_.Length/1MB,2\\)}},Name | Format-Table -AutoSize; \"--- 휴지통 ---\"; try { \\(New-Object -ComObject Shell.Application\\).NameSpace\\(10\\).Items\\(\\) | Where-Object { $_.Name -match 'pet|\\\\.js$|src' } | Select-Object -First 20 Name, @{n='Deleted';e={\\(New-Object -ComObject Shell.Application\\).NameSpace\\(10\\).GetDetailsOf\\($_,2\\)}} | Format-Table -AutoSize } catch { \"recycle bin read failed: $_\" })",
+      "PowerShell(\"--- OneDrive ---\"; Get-ChildItem \"$env:USERPROFILE\\\\OneDrive\" -ErrorAction SilentlyContinue | Select-Object -First 10 Name; \"--- Desktop 경로 ---\"; \\(Get-ItemProperty 'HKCU:\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\User Shell Folders'\\).Desktop; \"--- 섀도우 복사본 ---\"; try { vssadmin list shadows 2>$null | Select-String 'creation time' | Select-Object -First 5 } catch { 'vssadmin 불가\\(관리자 권한 필요\\)' })",
+      "PowerShell(\"--- VS Code Local History ---\"; $h=\"$env:APPDATA\\\\Code\\\\User\\\\History\"; if\\(Test-Path $h\\){ Get-ChildItem -Recurse -File $h -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 15 LastWriteTime,Name,FullName | Format-Table -AutoSize } else { \"없음: $h\" }; \"--- Cursor/기타 에디터 ---\"; @\\(\"$env:APPDATA\\\\Cursor\\\\User\\\\History\",\"$env:APPDATA\\\\Code - Insiders\\\\User\\\\History\"\\) | ForEach-Object { if\\(Test-Path $_\\){ \"있음: $_\" } })",
+      "PowerShell(\"--- metro cache ---\"; Get-ChildItem \"$env:TEMP\" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'metro|haste|react' } | Select-Object LastWriteTime,FullName | Format-Table -AutoSize; \"--- start.log 최근 ---\"; Get-Content \"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\\\\.expo\\\\dev\\\\logs\\\\start.log\" -Tail 15 -ErrorAction SilentlyContinue)",
+      "PowerShell($ErrorActionPreference='Continue'; git --version; git init -q; git add -A; git commit -q -m \"chore: 7/23 스냅샷 기준 베이스라인 커밋\"; git log --oneline -1; \"--- tracked file 수 ---\"; \\(git ls-files | Measure-Object -Line\\).Lines)"
+    ]
+  }
+}
