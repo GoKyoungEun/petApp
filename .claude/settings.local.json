@@ -39,7 +39,27 @@
       "PowerShell(git -C \"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\" diff -- .claude/settings.local.json)",
       "PowerShell(git -C $d add .claude/settings.local.json)",
       "PowerShell(git -C $d log --oneline)",
-      "PowerShell(\"--- ���� ���� ---\")"
+      "PowerShell(\"--- ���� ���� ---\")",
+      "PowerShell(git -C $d log -1 --format=\"name : %an%nemail: %ae\")",
+      "PowerShell(git -C $d config --show-origin user.name)",
+      "PowerShell(git -C $d config --show-origin user.email)",
+      "PowerShell(\"--- Ŀ�� �ۼ��� ���� ---\")",
+      "PowerShell(\"--- ���� ��ó ---\")",
+      "PowerShell(ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes -T git@github.com 2>&1)",
+      "PowerShell(git ls-remote git@github.com:GoKyoungEun/petApp.git 2>&1)",
+      "PowerShell($ErrorActionPreference='Continue')",
+      "PowerShell(\"--- SSH ���� Ȯ�� ---\")",
+      "PowerShell(\"--- ���� ����� ���� ---\")",
+      "PowerShell($ErrorActionPreference='SilentlyContinue'; \"--- ~/.ssh 내용 ---\"; if\\(Test-Path \"$env:USERPROFILE\\\\.ssh\"\\){ Get-ChildItem -Force \"$env:USERPROFILE\\\\.ssh\" | Select-Object Length,Name | Format-Table -AutoSize } else { \"\\(.ssh 폴더 없음\\)\" }; \"--- ssh-agent 등록 키 ---\"; ssh-add -l 2>&1 | Select-Object -First 5; \"--- 저장된 GitHub 자격증명\\(HTTPS용\\) ---\"; cmdkey /list 2>$null | Select-String -Pattern 'git' | Select-Object -First 5)",
+      "PowerShell($ErrorActionPreference='Continue'; $env:GIT_TERMINAL_PROMPT=0; \"--- HTTPS 원격 refs ---\"; git ls-remote https://github.com/GoKyoungEun/petApp.git 2>&1 | Select-Object -First 20)",
+      "PowerShell($ErrorActionPreference='Continue'; $env:GIT_TERMINAL_PROMPT=0; $t=\"C:\\\\Users\\\\cjddu\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-cjddu-Desktop-project-petApp\\\\3b00ee15-fc88-4124-be84-b7193f48c101\\\\scratchpad\\\\petApp-remote\"; if\\(Test-Path $t\\){ Remove-Item -Recurse -Force $t }; git clone https://github.com/GoKyoungEun/petApp.git $t 2>&1 | Select-Object -Last 5; \"--- 커밋 로그 ---\"; git -C $t log --oneline -20 --date=short --format=\"%h %ad %s\")",
+      "PowerShell($t=\"C:\\\\Users\\\\cjddu\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-cjddu-Desktop-project-petApp\\\\3b00ee15-fc88-4124-be84-b7193f48c101\\\\scratchpad\\\\petApp-remote\"; \"--- 원격 저장소 파일 목록 ---\"; git -C $t ls-tree -r --name-only HEAD; \"--- 파일 수 ---\"; \\(git -C $t ls-files | Measure-Object -Line\\).Lines)",
+      "PowerShell($ErrorActionPreference='Continue'; try { $r = Invoke-WebRequest -Uri \"https://api.github.com/repos/GoKyoungEun/petApp\" -UseBasicParsing -Headers @{ 'User-Agent'='check' } -ErrorAction Stop; $j = $r.Content | ConvertFrom-Json; \"인증 없이 조회됨 → PUBLIC \\(공개\\)\"; \"visibility: $\\($j.visibility\\)\"; \"default_branch: $\\($j.default_branch\\)\" } catch { \"인증 없이 조회 실패 \\(HTTP $\\($_.Exception.Response.StatusCode.value__\\)\\) → PRIVATE\\(비공개\\)일 가능성 높음\" })",
+      "PowerShell($ErrorActionPreference='Continue'; $env:GIT_TERMINAL_PROMPT=0; $d=\"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\"; \"--- 현재 브랜치 ---\"; git -C $d branch --show-current; git -C $d remote add origin https://github.com/GoKyoungEun/petApp.git; git -C $d branch -M main; git -C $d fetch -q origin; git -C $d rebase origin/main 2>&1 | Select-Object -Last 3; \"--- 정렬 후 로그 ---\"; git -C $d log --oneline; \"--- 원격 ---\"; git -C $d remote -v)",
+      "PowerShell(git -C $d add -A)",
+      "PowerShell(git -C $d rebase origin/main 2>&1)",
+      "PowerShell(git -C $d status --short --branch)",
+      "PowerShell(\"--- ���� �� ---\")"
     ]
   }
 }
