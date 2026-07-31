@@ -1,5 +1,10 @@
 # 03. DB Design
 
+> Supabase 구현: `supabase/schema.sql` (2026-07-29 작성 — 테이블·인덱스·RLS·Storage 버킷). User 엔터티는 Supabase Auth(auth.users)가 대체.
+> 앱의 repository 계층이 이 스키마를 직접 읽고 쓴다 (2026-07-30 교체 — `src/db.js`가 camelCase↔snake_case 매핑). 아래 엔터티 필드명은 앱 기준 camelCase이고 실제 컬럼은 snake_case다.
+>
+> RecordPhoto 테이블은 아직 쓰지 않는다 — 사진은 `HealthRecord.data.photos`에 **Storage 경로 배열**로 담고(카테고리는 기록 단위 `data.category`), 읽을 때 서명 URL로 바꿔 화면에 넘긴다. 사진 단위 분류·썸네일이 필요해지면 이 테이블로 분리한다.
+
 ## 기본 원칙
 
 내부 데이터 구조는 이벤트 기반으로 설계한다.
@@ -144,7 +149,8 @@ Schedule과 Record는 분리한다.
 
 ## 사진 제한
 
-- 기록당 최대 5장
-- 업로드 순서 저장
-- 압축 이미지 저장
+- 기록당 최대 6장 (2026-07-29: 5→6, 전체 기록보기 3열 격자 기준 — 11_ChangeLog)
+- 업로드 순서 저장 (`data.photos` 배열 순서가 곧 표시 순서)
+- 압축 이미지 저장 (긴 변 1280px·JPEG q0.7, 원본 미보관)
+- 저장 위치는 Supabase Storage `record-photos`(비공개), 경로 `{user_id}/{record_id}/{시각}-{n}.jpg` — 08_TechStack "이미지 저장"
 - 향후 AI 분석 결과와 연결할 수 있는 구조 고려
