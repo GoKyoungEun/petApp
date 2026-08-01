@@ -80,3 +80,32 @@ claude.ai/design 프로토타입 기반 React Native + Expo(SDK 54) 앱으로 �
 - 소셜 로그인은 카카오·구글 먼저, 애플은 추후
 
 미구현: 소셜 로그인·서버 연동(작업 예정), 푸시 알림, MedicalRecord 연동.
+
+## v0.5 코드 유실과 재구축 (2026-08-01)
+
+v0.3~v0.4(7/24~7/30) 작업분의 **코드가 유실됐다.** 원격 저장소 없이 로컬에만
+있었고, 로컬이 7/23 스냅샷으로 되돌아갔다. 복구 경로를 모두 확인했으나 남아
+있지 않았다. 기획 문서와 서버 자원(Supabase, OAuth 콘솔), 앱 아이콘은 무사하다.
+
+재발 방지
+
+- git 저장소 생성, GitHub 원격(`GoKyoungEun/petApp`) 연결
+- 이후 작업은 Phase 브랜치에서 진행
+
+재구축 Phase 1 (기반)
+
+- 실제 날짜 적용 — `src/date.js`. 로컬 캘린더 기준 YYYY-MM-DD로 통일하고,
+  `new Date('YYYY-MM-DD')`가 UTC 자정으로 파싱돼 하루가 밀리던 문제를 없앴다.
+  앱을 켜둔 채 자정을 넘겨도 날짜가 갱신된다.
+- 반응형 스케일링 — `src/scale.js`. `scaled()`가 StyleSheet 전체를 훑어 길이
+  키만 변환한다. 글꼴은 절반 비율, 비율은 0.85~1.25로 제한.
+- iOS 키보드 회피 — PetForm과 QuickRecordSheet에 KeyboardAvoidingView.
+- 기록·펫 도메인 TanStack Query 전환 — `src/queryClient.js`, `src/queries/*`.
+  쓰기 후 키 prefix 하나만 무효화하면 홈·캘린더·전체 기록이 함께 갱신된다.
+
+남은 것: 기록 수정·삭제 시트(Phase 1), Supabase + 로그인(Phase 2),
+통계·몸무게·일정·MY·건강사진 화면(Phase 3).
+
+Phase 2를 화면보다 앞에 두기로 했다. 7/30에는 로컬로 화면을 다 만든 뒤 서버로
+갈아끼웠지만, 지금은 서버가 이미 준비돼 있어 먼저 붙이면 그 교체 작업을 한 번
+더 하지 않아도 된다.
