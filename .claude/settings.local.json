@@ -79,7 +79,26 @@
       "PowerShell($ErrorActionPreference='Continue'; $env:GIT_TERMINAL_PROMPT=0; $d=\"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\"; git -C $d push -u origin phase1/foundation 2>&1 | Select-Object -Last 6)",
       "PowerShell($ErrorActionPreference='Continue'; $gh = \"$env:ProgramFiles\\\\GitHub CLI\\\\gh.exe\"; if\\(-not \\(Test-Path $gh\\)\\){ $gh = \\(Get-ChildItem \"$env:LOCALAPPDATA\\\\Programs\" -Recurse -Filter gh.exe -ErrorAction SilentlyContinue | Select-Object -First 1\\).FullName }; \"gh 경로: $gh\"; & $gh --version; \"--- 인증 상태 ---\"; & $gh auth status 2>&1 | Select-Object -First 8)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:8081/index.bundle?platform=web&dev=true\")",
-      "Bash(curl -s \"http://localhost:8081/index.bundle?platform=web&dev=true\" -o /tmp/b.js -w \"%{http_code}\")"
+      "Bash(curl -s \"http://localhost:8081/index.bundle?platform=web&dev=true\" -o /tmp/b.js -w \"%{http_code}\")",
+      "Bash(curl -s \"http://localhost:8081/\" -o /dev/null)",
+      "Bash(ipconfig)",
+      "Bash(iconv -f CP949 -t UTF-8)",
+      "Bash(grep -Eo '\\([0-9]{1,3}\\\\.\\){3}[0-9]{1,3}')",
+      "Bash(curl -s --max-time 20 -o /dev/null -w \"%{http_code}\" \"http://localhost:8081/\")",
+      "Bash(echo root=__CMDSUB_OUTPUT__)",
+      "Bash(netstat -ano)",
+      "Bash(tasklist)",
+      "Bash(sleep 75)",
+      "Bash(echo root=__TRACKED_VAR__)",
+      "Bash(curl -s --max-time 25 -o /dev/null -w \"%{http_code}\" \"http://localhost:8081/\")",
+      "Bash(echo \"--- 8081 리스너 ---\")",
+      "Bash(curl -s --max-time 10 -o /dev/null \"http://localhost:8081/\")",
+      "Bash(curl -s --max-time 15 -o /dev/null -w '%{http_code}' http://localhost:8081/)",
+      "Bash(echo \"READY root=$\\(curl -s --max-time 15 -o /dev/null -w '%{http_code}' http://localhost:8081/\\)\")",
+      "Bash(curl -s --max-time 60 -o /tmp/root.html -w \"code=%{http_code} type=%{content_type} size=%{size_download}\\\\n\" \"http://localhost:8081/\")",
+      "Read(//tmp/**)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
