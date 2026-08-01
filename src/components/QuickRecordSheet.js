@@ -330,16 +330,31 @@ function MoreSheet({ openSheet, closeSheet }) {
     { key: 'photo', icon: 'healthPhoto', label: '건강사진' },
     { key: 'memo', icon: 'memo', label: '메모' },
   ];
+  // Fixed three per row. Laying this out with a percentage width plus a gap
+  // overflowed by a pixel or two and silently dropped to two columns, and the
+  // safe percentage changes with screen width and the scale ratio — so build
+  // real rows and let flex divide them.
+  const rows = [];
+  for (let i = 0; i < items.length; i += 3) rows.push(items.slice(i, i + 3));
+
   return (
     <>
       <SheetHeader title="더보기" onClose={closeSheet} />
       <View style={styles.moreGrid}>
-        {items.map((it) => (
-          <Pressable key={it.key} style={styles.moreCell}
-            onPress={() => (it.key === 'photo' ? closeSheet() : openSheet(it.key, true))}>
-            <Icon name={it.icon} size={22} color={colors.primary} />
-            <Text style={styles.moreLabel}>{it.label}</Text>
-          </Pressable>
+        {rows.map((row, ri) => (
+          <View key={ri} style={styles.moreRow}>
+            {row.map((it) => (
+              <Pressable key={it.key} style={styles.moreCell}
+                onPress={() => (it.key === 'photo' ? closeSheet() : openSheet(it.key, true))}>
+                <Icon name={it.icon} size={22} color={colors.primary} />
+                <Text style={styles.moreLabel}>{it.label}</Text>
+              </Pressable>
+            ))}
+            {/* keep the last row's cells the same width as a full row's */}
+            {Array.from({ length: 3 - row.length }, (_, i) => (
+              <View key={`gap${i}`} style={styles.moreFiller} />
+            ))}
+          </View>
         ))}
       </View>
     </>
@@ -527,9 +542,11 @@ const styles = StyleSheet.create(scaled({
   },
   stepNum: { fontSize: 28, fontWeight: '800', color: colors.text },
   stepUnit: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
-  moreGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  moreGrid: { gap: 10 },
+  moreRow: { flexDirection: 'row', gap: 10 },
+  moreFiller: { flex: 1 },
   moreCell: {
-    width: '31.5%',
+    flex: 1,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surfaceMuted,

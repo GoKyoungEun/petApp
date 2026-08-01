@@ -107,7 +107,13 @@
       "Bash(node -e ' *)",
       "Bash(node tools/make-icons.js)",
       "Bash(curl -s --max-time 400 -o /dev/null -w \"bundle status=%{http_code} bytes=%{size_download}\\\\n\" \"http://localhost:8082/index.bundle?platform=web&dev=true\")",
-      "Bash(curl -s --max-time 500 -o /dev/null -w \"bundle status=%{http_code} bytes=%{size_download}\\\\n\" \"http://localhost:8082/index.bundle?platform=web&dev=true\")"
+      "Bash(curl -s --max-time 500 -o /dev/null -w \"bundle status=%{http_code} bytes=%{size_download}\\\\n\" \"http://localhost:8082/index.bundle?platform=web&dev=true\")",
+      "Bash(curl -s --max-time 200 \"http://localhost:8082/index.bundle?platform=web&dev=true\")",
+      "Bash(curl -s --max-time 550 -o /dev/null -w \"bundle status=%{http_code} bytes=%{size_download}\\\\n\" \"http://localhost:8082/index.bundle?platform=web&dev=true\")",
+      "Bash(curl -s --max-time 250 \"http://localhost:8082/index.bundle?platform=web&dev=true\")",
+      "Bash(curl -s --max-time 550 \"http://localhost:8082/index.bundle?platform=web&dev=true\")",
+      "Bash(node -e 'const p=require\\(\"./node_modules/@expo/metro/node_modules/metro/package.json\"\\); console.log\\(\"metro version:\", p.version\\)')",
+      "Bash(curl -s --max-time 550 -o /dev/null -w \"status=%{http_code}\\\\n\" \"http://localhost:8082/index.bundle?platform=web&dev=true\")"
     ]
   }
 }
