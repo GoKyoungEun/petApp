@@ -6,6 +6,7 @@ import { useStore } from '../store';
 import { recordRepo } from '../repository';
 import { speciesMeta } from '../pets';
 import { addDays, formatHeader } from '../date';
+import { scaled } from '../scale';
 
 // 강아지 = 산책 / 고양이 = 컨디션 (02_MVP_Requirement §3)
 const QUICK_BASE = [
@@ -172,7 +173,7 @@ function RecordRow({ icon, label, value, filled, last }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   scroll: { flex: 1 },
   content: { padding: 18, paddingTop: 12, paddingBottom: 24, gap: 16 },
   headerRow: {
@@ -278,4 +279,4 @@ const styles = StyleSheet.create({
   recRowLast: { borderBottomWidth: 0 },
   recLabel: { fontSize: 13, color: colors.textBody },
   recValue: { fontSize: 13, fontWeight: '700' },
-});
+}));

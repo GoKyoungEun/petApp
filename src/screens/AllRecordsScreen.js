@@ -5,6 +5,7 @@ import { colors } from '../theme';
 import { useStore } from '../store';
 import { recordRepo } from '../repository';
 import { formatDay, parseYmd } from '../date';
+import { scaled } from '../scale';
 
 // Item tabs, fixed order per 05_UI_UX. key = recordType (healthPhoto has no
 // records yet — photos aren't attached to records in this pass).
@@ -195,7 +196,7 @@ export default function AllRecordsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   wrap: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -266,4 +267,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   emptyBtnText: { color: colors.accentText, fontWeight: '700', fontSize: 13 },
-});
+}));

@@ -5,6 +5,7 @@ import { colors } from '../theme';
 import { useStore, summarizeDay } from '../store';
 import { recordRepo } from '../repository';
 import { WEEKDAYS, formatDay, parseYmd, toYmd } from '../date';
+import { scaled } from '../scale';
 
 const ymd = (y, m, d) => toYmd(new Date(y, m, d)); // m is 0-indexed
 
@@ -170,7 +171,7 @@ export default function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   wrap: { flex: 1 },
   monthHead: {
     flexDirection: 'row',
@@ -252,4 +253,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   emptyBtnText: { color: colors.accentText, fontWeight: '700', fontSize: 13 },
-});
+}));

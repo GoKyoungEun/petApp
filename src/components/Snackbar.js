@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Text, Pressable, StyleSheet } from 'react-native';
 import { colors } from '../theme';
 import { useStore } from '../store';
+import { scaled } from '../scale';
 
 export default function Snackbar() {
   const { snack, undo, toast } = useStore();
@@ -35,7 +36,7 @@ export default function Snackbar() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   snack: {
     position: 'absolute',
     left: 16,
@@ -57,4 +58,4 @@ const styles = StyleSheet.create({
   msg: { color: '#fff', fontSize: 13, fontWeight: '500', flex: 1 },
   msgToast: { textAlign: 'center' },
   undo: { color: colors.accent, fontSize: 13, fontWeight: '700', marginLeft: 12 },
-});
+}));

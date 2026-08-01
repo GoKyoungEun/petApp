@@ -4,6 +4,7 @@ import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
 import { speciesMeta, petSubtitle } from '../pets';
+import { scaled } from '../scale';
 
 const MAX_PETS = 5;
 
@@ -59,7 +60,7 @@ export default function PetMenu() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   backdrop: { flex: 1, backgroundColor: 'rgba(20,15,10,0.28)' },
   menu: {
     position: 'absolute',
@@ -112,4 +113,4 @@ const styles = StyleSheet.create({
     padding: 11,
   },
   addText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
-});
+}));

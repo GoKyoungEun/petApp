@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
+import { scaled } from '../scale';
 
 const TABS = [
   { key: 'home', icon: 'home', label: '홈' },
@@ -32,7 +33,7 @@ export default function BottomNav() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   nav: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -45,4 +46,4 @@ const styles = StyleSheet.create({
   },
   item: { alignItems: 'center', gap: 3 },
   label: { fontSize: 10 },
-});
+}));

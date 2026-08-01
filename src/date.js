@@ -42,3 +42,9 @@ export function formatDay(str) {
   const d = parseYmd(str);
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
 }
+
+// Measurement stamp: "2026. 7. 22"
+export function formatDot(str) {
+  const d = parseYmd(str);
+  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
+}

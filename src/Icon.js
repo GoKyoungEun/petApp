@@ -1,5 +1,6 @@
 import React from 'react';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { s } from './scale';
 
 // Maps the design's Tabler icon names to the closest @expo/vector-icons glyphs.
 // [family, glyph] — 'mci' = MaterialCommunityIcons, 'ion' = Ionicons.
@@ -41,9 +42,11 @@ const MAP = {
   edit: ['mci', 'pencil-outline'],
 };
 
+// `size` is a design-unit number, scaled here so the ~40 call sites can keep
+// passing the prototype's values.
 export default function Icon({ name, size = 20, color = '#2A2521', style }) {
   const entry = MAP[name] || ['mci', 'help-circle-outline'];
   const [family, glyph] = entry;
   const Cmp = family === 'ion' ? Ionicons : MaterialCommunityIcons;
-  return <Cmp name={glyph} size={size} color={color} style={style} />;
+  return <Cmp name={glyph} size={s(size)} color={color} style={style} />;
 }
