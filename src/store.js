@@ -121,6 +121,16 @@ export function StoreProvider({ children }) {
     })();
   }, [pets]);
 
+  // Which item tab 전체 기록보기 opens on. Lives here so the calendar can jump
+  // straight to one item (06_UserFlow "항목 선택 시 수정") — its day panel shows
+  // per-type totals, not individual records, so it can't open the edit sheet.
+  const [recordsType, setRecordsType] = useState('meal');
+
+  const openRecords = useCallback((type = 'meal') => {
+    setRecordsType(type);
+    setTab('records');
+  }, []);
+
   const [sheet, setSheet] = useState(null);
   const [sheetFromMore, setSheetFromMore] = useState(false);
   const [condStage, setCondStage] = useState('main');
@@ -262,6 +272,34 @@ export function StoreProvider({ children }) {
 
   const addRecord = useCallback((entry, msg) => addRecords([entry], msg), [addRecords]);
 
+  // Editing an existing record (02_MVP_Requirement §8 — no edit-count limit).
+  // Note these use showToast, not showSnack: undo is wired to the *last added*
+  // batch, so offering it here would delete the wrong rows.
+  const [editingRecord, setEditingRecord] = useState(null);
+
+  const openEditRecord = useCallback((record) => setEditingRecord(record), []);
+  const closeEditRecord = useCallback(() => setEditingRecord(null), []);
+
+  const updateRecord = useCallback(
+    async (id, patch) => {
+      await recordRepo.update(id, patch); // repo stamps updatedAt
+      await invalidateRecords(petId);
+      setEditingRecord(null);
+      showToast('수정되었습니다');
+    },
+    [petId, showToast]
+  );
+
+  const deleteRecord = useCallback(
+    async (id) => {
+      await recordRepo.remove(id);
+      await invalidateRecords(petId);
+      setEditingRecord(null);
+      showToast('삭제되었습니다');
+    },
+    [petId, showToast]
+  );
+
   const undo = useCallback(async () => {
     clearSnackTimer();
     for (const id of lastBatch.current) await recordRepo.remove(id);
@@ -313,8 +351,16 @@ export function StoreProvider({ children }) {
     toggleSymptom,
     records,
     todayItems,
+    recordsType,
+    setRecordsType,
+    openRecords,
     addRecord,
     addRecords,
+    editingRecord,
+    openEditRecord,
+    closeEditRecord,
+    updateRecord,
+    deleteRecord,
     undo,
     snack,
     toast,

@@ -23,7 +23,7 @@ function monthGrid(year, month) {
 }
 
 export default function CalendarScreen() {
-  const { petId, today, setTab } = useStore();
+  const { petId, today, setTab, openRecords } = useStore();
 
   // Opens on the current month with today selected; the user's later navigation
   // is theirs to keep, so a midnight rollover must not yank the view back.
@@ -123,13 +123,19 @@ export default function CalendarScreen() {
         {items.length > 0 ? (
           <View style={styles.recordCard}>
             {items.map((it, i) => (
-              <View key={it.type} style={[styles.recRow, i === items.length - 1 && styles.recRowLast]}>
+              <Pressable
+                key={it.type}
+                style={[styles.recRow, i === items.length - 1 && styles.recRowLast]}
+                onPress={() => openRecords(it.type)}>
                 <View style={styles.rowCenter}>
                   <Icon name={it.icon} size={16} color={colors.primary} />
                   <Text style={styles.recLabel}>{it.label}</Text>
                 </View>
-                <Text style={styles.recValue}>{it.value}</Text>
-              </View>
+                <View style={styles.rowCenter}>
+                  <Text style={styles.recValue}>{it.value}</Text>
+                  <Icon name="chevron-right" size={13} color={colors.textGhost} />
+                </View>
+              </Pressable>
             ))}
           </View>
         ) : (

@@ -17,8 +17,7 @@ import { colors } from '../theme';
 import { useStore } from '../store';
 import { speciesMeta, birthDateFromAge, ageYears } from '../pets';
 import { scaled } from '../scale';
-
-const isValidDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime());
+import { isValidYmd } from '../date';
 
 export default function PetForm() {
   const { showPetForm, closePetForm, addPet, updatePet, removePet, editingPetId, pets } =
@@ -74,7 +73,7 @@ export default function PetForm() {
     }
   }, [showPetForm, editingPetId]);
 
-  const dateOk = birthMode === 'age' || isValidDate(birthText);
+  const dateOk = birthMode === 'age' || isValidYmd(birthText);
   const canSave = name.trim() !== '' && gender !== null && dateOk;
 
   const pickPhoto = async () => {

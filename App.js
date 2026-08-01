@@ -16,6 +16,7 @@ import QuickRecordSheet from './src/components/QuickRecordSheet';
 import Snackbar from './src/components/Snackbar';
 import PetMenu from './src/components/PetMenu';
 import PetForm from './src/components/PetForm';
+import EditRecordSheet from './src/components/EditRecordSheet';
 
 function Root() {
   const { tab } = useStore();
@@ -38,6 +39,7 @@ function Root() {
       <QuickRecordSheet />
       <PetMenu />
       <PetForm />
+      <EditRecordSheet />
     </SafeAreaView>
   );
 }

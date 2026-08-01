@@ -18,13 +18,12 @@ import { colors } from '../theme';
 import { useStore } from '../store';
 import { scaled } from '../scale';
 import { formatDot } from '../date';
+import { MAX_PHOTOS } from '../repository';
 
 const SYMPTOM_OPTS = [
   '식욕 저하', '기운 없음', '구토', '설사', '기침',
   '재채기', '절뚝거림', '자주 긁음', '기타',
 ];
-
-const MAX_PHOTOS = 5;
 
 // Sheets that use the two-step flow (state → photo/memo detail).
 const DETAIL_TITLE = { meal: '식사', poop: '배변', pee: '소변', vomit: '구토' };

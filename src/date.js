@@ -43,6 +43,14 @@ export function formatDay(str) {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
 }
 
+// True only for a real calendar day. The round-trip check rejects rollovers
+// like '2026-02-31', which Date happily turns into March 3.
+export function isValidYmd(str) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return false;
+  const d = parseYmd(str);
+  return !isNaN(d.getTime()) && toYmd(d) === str;
+}
+
 // Measurement stamp: "2026. 7. 22"
 export function formatDot(str) {
   const d = parseYmd(str);

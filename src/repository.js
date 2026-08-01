@@ -13,6 +13,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY = 'petapp:records:v1';
 
+// 03_DB_Design "사진 제한" — 6장이면 전체 기록보기의 3열 격자에 2행으로
+// 떨어진다 (2026-07-29에 5→6, 11_ChangeLog).
+export const MAX_PHOTOS = 6;
+
 let _records = null; // in-memory cache; null until first load
 let _loading = null; // in-flight load promise (dedupes concurrent callers)
 let _seq = 1;

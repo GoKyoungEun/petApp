@@ -62,8 +62,8 @@ function groupByDate(records) {
 }
 
 export default function AllRecordsScreen() {
-  const { petId, setTab, openSheet } = useStore();
-  const [type, setType] = useState('meal');
+  const { petId, setTab, openSheet, openEditRecord, recordsType: type, setRecordsType: setType } =
+    useStore();
   const [photoCat, setPhotoCat] = useState('눈');
 
   const isPhoto = type === 'healthPhoto';
@@ -157,10 +157,14 @@ export default function AllRecordsScreen() {
             <View key={date} style={styles.card}>
               <Text style={styles.cardDate}>{formatDate(date)}</Text>
               {items.map((r) => (
-                <View key={r.id} style={styles.entryBlock}>
+                <Pressable
+                  key={r.id}
+                  style={styles.entryBlock}
+                  onPress={() => openEditRecord(r)}>
                   <View style={styles.entry}>
                     <View style={styles.dot} />
                     <Text style={styles.entryText}>{describe(type, r)}</Text>
+                    <Icon name="edit" size={13} color={colors.textGhost} />
                   </View>
                   {r.memo ? <Text style={styles.entryMemo}>{r.memo}</Text> : null}
                   {r.data?.photos?.length ? (
@@ -170,7 +174,7 @@ export default function AllRecordsScreen() {
                       ))}
                     </ScrollView>
                   ) : null}
-                </View>
+                </Pressable>
               ))}
               {(type === 'urine' || type === 'vomit') && (
                 <Text style={styles.countHint}>총 {items.length}회</Text>
