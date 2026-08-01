@@ -54,7 +54,9 @@ export default function QuickRecordSheet() {
 
   const backToMore = sheetFromMore ? () => openSheet('more') : undefined;
 
-  const visible = !!sheet;
+  // 'photo' is handled by HealthPhotoSheet — that record type is about the
+  // photos rather than a one-tap state, so it gets its own sheet.
+  const visible = !!sheet && sheet !== 'photo';
   const slide = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -345,7 +347,7 @@ function MoreSheet({ openSheet, closeSheet }) {
           <View key={ri} style={styles.moreRow}>
             {row.map((it) => (
               <Pressable key={it.key} style={styles.moreCell}
-                onPress={() => (it.key === 'photo' ? closeSheet() : openSheet(it.key, true))}>
+                onPress={() => openSheet(it.key, true)}>
                 <Icon name={it.icon} size={22} color={colors.primary} />
                 <Text style={styles.moreLabel}>{it.label}</Text>
               </Pressable>

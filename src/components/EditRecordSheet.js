@@ -24,15 +24,18 @@ import { useStore } from '../store';
 import { scaled } from '../scale';
 import { isValidYmd } from '../date';
 import { MAX_PHOTOS } from '../repository';
-import { pickRecordPhotos } from '../photo';
+import { pickRecordPhotos, captureRecordPhoto } from '../photo';
+import { PHOTO_CATEGORIES } from './HealthPhotoSheet';
 
 const TITLE = {
   meal: '식사', stool: '배변', urine: '소변', vomit: '구토',
   walk: '산책', condition: '컨디션', weight: '몸무게', note: '메모',
+  healthPhoto: '건강사진',
 };
 
-// Types whose quick-record flow offers photo + memo (02_MVP_Requirement §4).
-const ATTACHABLE = ['meal', 'stool', 'urine', 'vomit'];
+// Types that carry photos: the four quick-record ones (02 §4) plus 건강사진,
+// which is entirely about them.
+const ATTACHABLE = ['meal', 'stool', 'urine', 'vomit', 'healthPhoto'];
 
 const STATE_OPTS = {
   meal: ['완료', '안 먹음'],
@@ -58,9 +61,11 @@ export default function EditRecordSheet() {
   const [level, setLevel] = useState(null);
   const [symptoms, setSymptoms] = useState([]);
   const [photos, setPhotos] = useState([]);
+  const [category, setCategory] = useState(null);
   const [memo, setMemo] = useState('');
   const [dateText, setDateText] = useState('');
   const [confirmDel, setConfirmDel] = useState(false);
+  const [busy, setBusy] = useState(false); // compression in flight
 
   // Refill from the record every time the sheet opens on a different row.
   useEffect(() => {
@@ -72,6 +77,7 @@ export default function EditRecordSheet() {
     setLevel(d.level ?? null);
     setSymptoms(d.symptoms ?? []);
     setPhotos(d.photos ?? []);
+    setCategory(d.category ?? null);
     setMemo(rec.memo ?? '');
     setDateText(rec.recordDate ?? '');
     setConfirmDel(false);
@@ -80,14 +86,24 @@ export default function EditRecordSheet() {
   if (!rec) return null;
 
   const attachable = ATTACHABLE.includes(type);
+  const isPhotoRecord = type === 'healthPhoto';
   const dateOk = isValidYmd(dateText);
   // 메모 records carry their body in `memo`, so an empty one has nothing left.
   const bodyOk = type !== 'note' || memo.trim() !== '';
-  const canSave = dateOk && bodyOk;
+  // A 건강사진 record is its photos plus a required category (02 §6) — deleting
+  // the last photo has to go through 삭제, not save.
+  const photoOk = !isPhotoRecord || (photos.length > 0 && !!category);
+  const canSave = dateOk && bodyOk && photoOk;
 
-  const pickPhoto = async () => {
-    const picked = await pickRecordPhotos(MAX_PHOTOS - photos.length);
-    if (picked.length) setPhotos((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
+  const addPhotos = async (fn) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const picked = await fn(MAX_PHOTOS - photos.length);
+      if (picked.length) setPhotos((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submit = () => {
@@ -101,6 +117,7 @@ export default function EditRecordSheet() {
       data.symptoms = level === '안 좋아요' ? symptoms : [];
     }
     if (attachable) data.photos = photos;
+    if (isPhotoRecord) data.category = category;
 
     updateRecord(rec.id, {
       recordDate: dateText,
@@ -210,14 +227,47 @@ export default function EditRecordSheet() {
                     </Pressable>
                   ))}
                   {photos.length < MAX_PHOTOS && (
-                    <Pressable style={[styles.photoCell, styles.photoAdd]} onPress={pickPhoto}>
-                      <Icon name="camera" size={18} color={colors.primary} />
-                    </Pressable>
+                    <>
+                      <Pressable
+                        style={[styles.photoCell, styles.photoAdd, busy && styles.photoBusy]}
+                        onPress={() => addPhotos(captureRecordPhoto)}>
+                        <Icon name="camera" size={18} color={colors.primary} />
+                        <Text style={styles.addText}>촬영</Text>
+                      </Pressable>
+                      <Pressable
+                        style={[styles.photoCell, styles.photoAdd, busy && styles.photoBusy]}
+                        onPress={() => addPhotos(pickRecordPhotos)}>
+                        <Icon name="healthPhoto" size={20} />
+                        <Text style={styles.addText}>갤러리</Text>
+                      </Pressable>
+                    </>
                   )}
                 </View>
-                {photos.length > 0 && (
-                  <Text style={styles.hint}>사진을 누르면 삭제돼요</Text>
-                )}
+                <Text style={styles.hint}>
+                  {busy
+                    ? '사진을 정리하는 중이에요'
+                    : photos.length > 0
+                      ? '사진을 누르면 삭제돼요'
+                      : ''}
+                </Text>
+              </Field>
+            )}
+
+            {isPhotoRecord && (
+              <Field label="분류">
+                <View style={styles.chipWrap}>
+                  {PHOTO_CATEGORIES.map((c) => {
+                    const on = c === category;
+                    return (
+                      <Pressable
+                        key={c}
+                        style={[styles.chip, on && styles.chipOn]}
+                        onPress={() => setCategory(c)}>
+                        <Text style={[styles.chipText, on && styles.chipTextOn]}>{c}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </Field>
             )}
 
@@ -389,7 +439,10 @@ const styles = StyleSheet.create(scaled({
     borderColor: '#CFC7BC',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 3,
   },
+  photoBusy: { opacity: 0.5 },
+  addText: { fontSize: 10, color: '#7A736B', fontWeight: '600' },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',

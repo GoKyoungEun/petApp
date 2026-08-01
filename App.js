@@ -17,6 +17,7 @@ import Snackbar from './src/components/Snackbar';
 import PetMenu from './src/components/PetMenu';
 import PetForm from './src/components/PetForm';
 import EditRecordSheet from './src/components/EditRecordSheet';
+import HealthPhotoSheet from './src/components/HealthPhotoSheet';
 
 function Root() {
   const { tab } = useStore();
@@ -37,6 +38,7 @@ function Root() {
       <BottomNav />
       <Snackbar />
       <QuickRecordSheet />
+      <HealthPhotoSheet />
       <PetMenu />
       <PetForm />
       <EditRecordSheet />

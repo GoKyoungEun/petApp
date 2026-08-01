@@ -28,8 +28,12 @@ const TYPE_META = {
   condition: { icon: 'condition', label: '컨디션' },
   weight: { icon: 'weight', label: '몸무게' },
   note: { icon: 'memo', label: '메모' },
+  healthPhoto: { icon: 'healthPhoto', label: '건강사진' },
 };
-const TODAY_ORDER = ['meal', 'stool', 'urine', 'vomit', 'walk', 'condition', 'weight', 'note'];
+// 05_UI_UX "날짜 상세 화면" fixed order — 사진 comes last.
+const TODAY_ORDER = [
+  'meal', 'stool', 'urine', 'vomit', 'walk', 'condition', 'weight', 'note', 'healthPhoto',
+];
 
 function summarizeType(type, recs) {
   switch (type) {
@@ -51,6 +55,11 @@ function summarizeType(type, recs) {
     }
     case 'note':
       return '작성됨';
+    case 'healthPhoto': {
+      // Count photos, not records — two records of three photos reads as 6장.
+      const n = recs.reduce((sum, r) => sum + (r.data?.photos?.length || 0), 0);
+      return `${n}장`;
+    }
     default:
       return `${recs.length}회`;
   }

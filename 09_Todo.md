@@ -25,13 +25,22 @@ Phase 브랜치에서 진행한다.
 - 실제 날짜 적용 (`src/date.js` — 로컬 캘린더 기준 YYYY-MM-DD)
 - 반응형 스케일링 (`src/scale.js` — 기기 폭 기준), iOS 키보드 회피
 - 기록·펫 도메인 TanStack Query (`src/queries/records.js`·`pets.js`)
+- 기록 수정·삭제 시트 (`src/components/EditRecordSheet.js`)
+- 직접 만든 일러스트 아이콘 27종 (`assets/icon`, `tools/make-icons.js`로 생성)
+- 건강사진 (`recordType: healthPhoto`): 더보기 → 전용 시트(카메라·갤러리
+  멀티선택, 기록당 최대 6장, 저장 전 압축 1280px·JPEG q0.7, 카테고리 필수,
+  메모 선택), 전체기록 탭 연결('전체'+카테고리 필터), 카드 안 3열 격자,
+  홈·캘린더 "N장" 표시, 수정 시트에서 사진·분류 편집
 
 ## 재구현이 필요한 것
 
 아래 "완료" 목록 중 현재 저장소에 없는 것 — 통계 화면, 몸무게 전용 화면,
-건강 일정 탭, 캘린더 월↔주 축소, 마이페이지, 건강사진, 일정 도메인 Query,
+건강 일정 탭, 캘린더 월↔주 축소, 마이페이지, 일정 도메인 Query,
 Supabase 연동 일체(`supabase.js`·`db.js`·`auth.js`·`photoStore.js`·
 `LoginScreen`·repo 3종 교체), 카카오·구글 로그인.
+
+사진은 지금 `data.photos`에 data URI로 들어간다. Supabase로 옮길 때
+Storage 업로드 + 경로 저장으로 바꾼다(08_TechStack "이미지 저장").
 
 ## 유실 전 구현 현황 (2026-07-29 기준 — 설계 근거로 보존)
 
