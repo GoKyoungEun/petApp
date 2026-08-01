@@ -18,13 +18,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
 import { scaled } from '../scale';
 import { isValidYmd } from '../date';
 import { MAX_PHOTOS } from '../repository';
+import { pickRecordPhotos } from '../photo';
 
 const TITLE = {
   meal: '식사', stool: '배변', urine: '소변', vomit: '구토',
@@ -86,25 +86,8 @@ export default function EditRecordSheet() {
   const canSave = dateOk && bodyOk;
 
   const pickPhoto = async () => {
-    if (photos.length >= MAX_PHOTOS) return;
-    try {
-      if (Platform.OS !== 'web') {
-        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (perm.status !== 'granted') return;
-      }
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        base64: true,
-        quality: 0.5,
-      });
-      if (!res.canceled && res.assets?.length) {
-        const a = res.assets[0];
-        const uri = a.base64 ? `data:image/jpeg;base64,${a.base64}` : a.uri;
-        setPhotos((prev) => [...prev, uri].slice(0, MAX_PHOTOS));
-      }
-    } catch (e) {
-      // cancelled / unavailable
-    }
+    const picked = await pickRecordPhotos(MAX_PHOTOS - photos.length);
+    if (picked.length) setPhotos((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
   };
 
   const submit = () => {

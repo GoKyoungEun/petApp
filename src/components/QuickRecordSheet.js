@@ -12,13 +12,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
 import { scaled } from '../scale';
 import { formatDot } from '../date';
 import { MAX_PHOTOS } from '../repository';
+import { pickRecordPhotos } from '../photo';
 
 const SYMPTOM_OPTS = [
   '식욕 저하', '기운 없음', '구토', '설사', '기침',
@@ -74,24 +74,8 @@ export default function QuickRecordSheet() {
   });
 
   const pickPhoto = async () => {
-    try {
-      if (Platform.OS !== 'web') {
-        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (perm.status !== 'granted') return;
-      }
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        base64: true,
-        quality: 0.5,
-      });
-      if (!res.canceled && res.assets?.length) {
-        const a = res.assets[0];
-        const uri = a.base64 ? `data:image/jpeg;base64,${a.base64}` : a.uri;
-        setPhotos((prev) => [...prev, uri].slice(0, MAX_PHOTOS));
-      }
-    } catch (e) {
-      // cancelled / unavailable
-    }
+    const picked = await pickRecordPhotos(MAX_PHOTOS - photos.length);
+    if (picked.length) setPhotos((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
   };
 
   // Step 1 → step 2: remember the chosen record, then show the detail step.
