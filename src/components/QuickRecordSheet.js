@@ -327,7 +327,7 @@ function MoreSheet({ openSheet, closeSheet }) {
       ? { key: 'walk', icon: 'walk', label: '산책' }
       : { key: 'condition', icon: 'condition', label: '컨디션' },
     { key: 'weight', icon: 'weight', label: '몸무게' },
-    { key: 'photo', icon: 'camera', label: '건강사진' },
+    { key: 'photo', icon: 'healthPhoto', label: '건강사진' },
     { key: 'memo', icon: 'memo', label: '메모' },
   ];
   return (

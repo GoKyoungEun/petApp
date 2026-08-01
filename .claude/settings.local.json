@@ -98,7 +98,16 @@
       "Bash(curl -s --max-time 60 -o /tmp/root.html -w \"code=%{http_code} type=%{content_type} size=%{size_download}\\\\n\" \"http://localhost:8081/\")",
       "Read(//tmp/**)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(netsh int *)",
+      "Bash(curl -s --max-time 10 -o /dev/null \"http://localhost:8082/\")",
+      "Bash(git reset *)",
+      "Bash(git restore *)",
+      "Bash(node -e ' *)",
+      "Bash(node tools/make-icons.js)",
+      "Bash(curl -s --max-time 400 -o /dev/null -w \"bundle status=%{http_code} bytes=%{size_download}\\\\n\" \"http://localhost:8082/index.bundle?platform=web&dev=true\")",
+      "Bash(curl -s --max-time 500 -o /dev/null -w \"bundle status=%{http_code} bytes=%{size_download}\\\\n\" \"http://localhost:8082/index.bundle?platform=web&dev=true\")"
     ]
   }
 }
