@@ -3,7 +3,7 @@ import { View, Text, Image, ScrollView, Pressable, StyleSheet } from 'react-nati
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
-import { recordRepo } from '../repository';
+import { fetchRecordsByDate } from '../queries/records';
 import { speciesMeta } from '../pets';
 import { addDays, formatHeader } from '../date';
 import { scaled } from '../scale';
@@ -38,7 +38,7 @@ export default function HomeScreen() {
   const sameAsUsual = async () => {
     if (!petId) return;
     const types = SAME_TYPES[species] || SAME_TYPES.dog;
-    const prev = await recordRepo.listByDate(petId, addDays(today, -1));
+    const prev = await fetchRecordsByDate(petId, addDays(today, -1));
     const copy = prev
       .filter((r) => types.includes(r.recordType))
       .map((r) => {

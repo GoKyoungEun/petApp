@@ -78,7 +78,8 @@
       "PowerShell(\"--- ��ŷƮ�� ---\")",
       "PowerShell($ErrorActionPreference='Continue'; $env:GIT_TERMINAL_PROMPT=0; $d=\"C:\\\\Users\\\\cjddu\\\\Desktop\\\\project\\\\petApp\"; git -C $d push -u origin phase1/foundation 2>&1 | Select-Object -Last 6)",
       "PowerShell($ErrorActionPreference='Continue'; $gh = \"$env:ProgramFiles\\\\GitHub CLI\\\\gh.exe\"; if\\(-not \\(Test-Path $gh\\)\\){ $gh = \\(Get-ChildItem \"$env:LOCALAPPDATA\\\\Programs\" -Recurse -Filter gh.exe -ErrorAction SilentlyContinue | Select-Object -First 1\\).FullName }; \"gh 경로: $gh\"; & $gh --version; \"--- 인증 상태 ---\"; & $gh auth status 2>&1 | Select-Object -First 8)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:8081/index.bundle?platform=web&dev=true\")"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:8081/index.bundle?platform=web&dev=true\")",
+      "Bash(curl -s \"http://localhost:8081/index.bundle?platform=web&dev=true\" -o /tmp/b.js -w \"%{http_code}\")"
     ]
   }
 }

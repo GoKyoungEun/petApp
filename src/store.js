@@ -11,6 +11,8 @@ import { AppState } from 'react-native';
 import { recordRepo } from './repository';
 import { petRepo } from './petRepo';
 import { todayYmd } from './date';
+import { useRecordsByDate, invalidateRecords } from './queries/records';
+import { usePets, invalidatePets } from './queries/pets';
 
 const StoreContext = createContext(null);
 
@@ -93,7 +95,9 @@ export function StoreProvider({ children }) {
     };
   }, [today]);
 
-  const [pets, setPets] = useState([]);
+  // Pets come from the query cache (seeds 코코·보리 on first run); which one is
+  // selected is UI state and stays here.
+  const { data: pets = [] } = usePets();
   const [currentPetId, setCurrentPetId] = useState(null);
   const [showPetMenu, setShowPetMenu] = useState(false);
   const [showPetForm, setShowPetForm] = useState(false);
@@ -104,17 +108,18 @@ export function StoreProvider({ children }) {
   const species = currentPet?.species ?? 'dog';
   const pet = currentPet?.name ?? '';
 
-  // Load persisted pets + last selection on mount (seeds 코코·보리 first run).
+  // Restore the last selection once the list arrives. Only on the first load —
+  // later refetches (after an edit or delete) must not override the user's
+  // current choice.
+  const selectionRestored = useRef(false);
   useEffect(() => {
+    if (selectionRestored.current || pets.length === 0) return;
+    selectionRestored.current = true;
     (async () => {
-      const list = await petRepo.list();
-      setPets(list);
       const saved = await petRepo.getSelectedId();
-      setCurrentPetId(
-        saved && list.some((p) => p.id === saved) ? saved : list[0]?.id ?? null
-      );
+      setCurrentPetId(saved && pets.some((p) => p.id === saved) ? saved : pets[0].id);
     })();
-  }, []);
+  }, [pets]);
 
   const [sheet, setSheet] = useState(null);
   const [sheetFromMore, setSheetFromMore] = useState(false);
@@ -123,24 +128,15 @@ export function StoreProvider({ children }) {
   const [weightVal, setWeightVal] = useState(4.2);
   const [symptoms, setSymptoms] = useState(['식욕 저하']);
 
-  const [records, setRecords] = useState([]); // today's records for current pet
+  // Today's records for the current pet. The query refetches itself whenever
+  // petId/today change or a write invalidates the prefix.
+  const { data: records = [] } = useRecordsByDate(petId, today);
+
   const lastBatch = useRef([]); // ids added by the last save — undo removes these
   const [snack, setSnack] = useState(null); // save confirmation (has undo)
   const snackTimer = useRef(null);
   const [toast, setToast] = useState(null); // plain notice (no undo)
   const toastTimer = useRef(null);
-
-  const refreshToday = useCallback(async () => {
-    if (!petId) {
-      setRecords([]);
-      return;
-    }
-    setRecords(await recordRepo.listByDate(petId, today));
-  }, [petId, today]);
-
-  useEffect(() => {
-    refreshToday();
-  }, [refreshToday]);
 
   const selectPet = useCallback(async (id) => {
     setCurrentPetId(id);
@@ -162,7 +158,7 @@ export function StoreProvider({ children }) {
 
   const addPet = useCallback(async (data) => {
     const created = await petRepo.add(data);
-    setPets(await petRepo.list());
+    await invalidatePets();
     setCurrentPetId(created.id);
     await petRepo.setSelectedId(created.id);
     closePetForm();
@@ -171,17 +167,20 @@ export function StoreProvider({ children }) {
 
   const updatePet = useCallback(async (id, data) => {
     await petRepo.update(id, data);
-    setPets(await petRepo.list());
+    await invalidatePets();
     closePetForm();
   }, [closePetForm]);
 
   const removePet = useCallback(
     async (id) => {
       await petRepo.remove(id);
-      await recordRepo.removeByPet(id);
-      const list = await petRepo.list();
-      setPets(list);
+      await recordRepo.removeByPet(id); // cascade — no orphan records
+      await invalidatePets();
+      await invalidateRecords(id);
       if (id === currentPetId) {
+        // Read the fresh list directly: the query refetch may not have landed
+        // yet, and the next selection has to be right now.
+        const list = await petRepo.list();
         const next = list[0]?.id ?? null;
         setCurrentPetId(next);
         await petRepo.setSelectedId(next);
@@ -253,12 +252,12 @@ export function StoreProvider({ children }) {
         added.push(rec.id);
       }
       lastBatch.current = added;
-      await refreshToday();
+      await invalidateRecords(petId);
       setSheet(null);
       setCondStage('main');
       showSnack(msg);
     },
-    [petId, today, refreshToday, showSnack]
+    [petId, today, showSnack]
   );
 
   const addRecord = useCallback((entry, msg) => addRecords([entry], msg), [addRecords]);
@@ -267,9 +266,9 @@ export function StoreProvider({ children }) {
     clearSnackTimer();
     for (const id of lastBatch.current) await recordRepo.remove(id);
     lastBatch.current = [];
-    await refreshToday();
+    await invalidateRecords(petId);
     setSnack(null);
-  }, [clearSnackTimer, refreshToday]);
+  }, [clearSnackTimer, petId]);
 
   const toggleSymptom = useCallback((op) => {
     setSymptoms((cur) =>

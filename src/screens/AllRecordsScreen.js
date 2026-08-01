@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, ScrollView, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
-import { recordRepo } from '../repository';
+import { useRecordsByType } from '../queries/records';
 import { formatDay, parseYmd } from '../date';
 import { scaled } from '../scale';
 
@@ -64,26 +64,13 @@ function groupByDate(records) {
 export default function AllRecordsScreen() {
   const { petId, setTab, openSheet } = useStore();
   const [type, setType] = useState('meal');
-  const [records, setRecords] = useState([]);
   const [photoCat, setPhotoCat] = useState('눈');
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      if (!petId || type === 'healthPhoto') {
-        if (alive) setRecords([]);
-        return;
-      }
-      const list = await recordRepo.listByType(petId, type);
-      if (alive) setRecords(list);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [petId, type]);
+  const isPhoto = type === 'healthPhoto';
+  // 건강사진 has no records yet — pass null so the query stays idle.
+  const { data: records = [] } = useRecordsByType(petId, isPhoto ? null : type);
 
   const grouped = groupByDate(records);
-  const isPhoto = type === 'healthPhoto';
   const empty = isPhoto || grouped.length === 0;
 
   const addRecord = () => {

@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore, summarizeDay } from '../store';
-import { recordRepo } from '../repository';
+import { useRecordDates, useRecordsByDate } from '../queries/records';
 import { WEEKDAYS, formatDay, parseYmd, toYmd } from '../date';
 import { scaled } from '../scale';
 
@@ -32,36 +32,11 @@ export default function CalendarScreen() {
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const [selected, setSelected] = useState(today);
-  const [recordDates, setRecordDates] = useState(new Set());
-  const [dayRecords, setDayRecords] = useState([]);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      if (!petId) return;
-      const dates = await recordRepo.datesWithRecords(petId);
-      if (alive) setRecordDates(new Set(dates));
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [petId]);
+  const { data: dates } = useRecordDates(petId);
+  const { data: dayRecords = [] } = useRecordsByDate(petId, selected);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      if (!petId) {
-        if (alive) setDayRecords([]);
-        return;
-      }
-      const list = await recordRepo.listByDate(petId, selected);
-      if (alive) setDayRecords(list);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [petId, selected]);
-
+  const recordDates = useMemo(() => new Set(dates ?? []), [dates]);
   const rows = useMemo(() => monthGrid(view.year, view.month), [view]);
   const items = summarizeDay(dayRecords);
 
