@@ -3,8 +3,8 @@
 // 기본값은 언제나 오늘이라 빠른 기록의 탭 수는 그대로다(02_MVP "빠른 기록"은
 // 탭 → 상태 → 즉시 저장). 어제 것을 뒤늦게 적는 경우에만 한 번 더 누른다.
 //
-// 미래 날짜는 고를 수 없다. 기록은 이미 일어난 일이고, 앞으로 할 일은 일정
-// 도메인이 따로 있다(03_DB_Design "일정과 기록의 관계").
+// 기록은 미래 날짜를 고를 수 없다 — 이미 일어난 일만 적는다. 반대로 일정은
+// 앞날이 본체라 allowFuture로 연다(03_DB_Design "일정과 기록의 관계").
 //
 // 달력을 Modal로 띄우지 않는 이유는 DateSelect와 같다 — 시트가 이미 Modal
 // 안이라 겹쳐 띄우면 iOS에서 깨지고, 절대 위치로 덮으면 Android가 부모 바깥을
@@ -15,9 +15,11 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { scaled } from '../scale';
-import { WEEKDAYS, formatDay, parseYmd, addDays, monthRows } from '../date';
+import { WEEKDAYS, formatDay, parseYmd, daysUntil, monthRows } from '../date';
 
-export default function DateField({ value, today, onChange }) {
+const RELATIVE = { '-1': '어제', 0: '오늘', 1: '내일' };
+
+export default function DateField({ value, today, onChange, label = '기록 날짜', allowFuture = false }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState(() => {
     const d = parseYmd(value || today);
@@ -34,14 +36,13 @@ export default function DateField({ value, today, onChange }) {
     setView({ year: d.getFullYear(), month: d.getMonth() });
   };
 
-  // 오늘·어제는 날짜만 봐서는 바로 안 읽힌다 — 굳이 달력을 열지 않아도 지금
-  // 어느 날에 쓰고 있는지 알 수 있게 붙여 준다.
-  const relative =
-    value === today ? '오늘' : value === addDays(today, -1) ? '어제' : null;
+  // 어제·오늘·내일은 날짜만 봐서는 바로 안 읽힌다 — 굳이 달력을 열지 않아도
+  // 지금 어느 날을 가리키는지 알 수 있게 붙여 준다.
+  const relative = RELATIVE[daysUntil(today, value)] ?? null;
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>기록 날짜</Text>
+      <Text style={styles.label}>{label}</Text>
 
       <Pressable style={[styles.box, open && styles.boxOn]} onPress={() => setOpen((v) => !v)}>
         <Text style={styles.boxText}>
@@ -73,7 +74,8 @@ export default function DateField({ value, today, onChange }) {
             <View key={ri} style={styles.gridRow}>
               {row.map((dateStr, ci) => {
                 if (dateStr == null) return <View key={ci} style={styles.cell} />;
-                const future = dateStr > today; // YYYY-MM-DD는 문자열 비교로 날짜순이다
+                // YYYY-MM-DD는 문자열 비교가 곧 날짜순이다.
+                const future = !allowFuture && dateStr > today;
                 const isSel = dateStr === value;
                 const isToday = dateStr === today;
                 return (

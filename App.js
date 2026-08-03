@@ -12,6 +12,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import AllRecordsScreen from './src/screens/AllRecordsScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import StubScreen from './src/screens/StubScreen';
+import ScheduleScreen from './src/screens/ScheduleScreen';
 import MyScreen from './src/screens/MyScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import BottomNav from './src/components/BottomNav';
@@ -19,6 +20,7 @@ import QuickRecordSheet from './src/components/QuickRecordSheet';
 import Snackbar from './src/components/Snackbar';
 import PetMenu from './src/components/PetMenu';
 import PetForm from './src/components/PetForm';
+import ScheduleForm from './src/components/ScheduleForm';
 import EditRecordSheet from './src/components/EditRecordSheet';
 import HealthPhotoSheet from './src/components/HealthPhotoSheet';
 
@@ -33,6 +35,8 @@ function Root() {
           <AllRecordsScreen />
         ) : tab === 'calendar' ? (
           <CalendarScreen />
+        ) : tab === 'schedule' ? (
+          <ScheduleScreen />
         ) : tab === 'my' ? (
           <MyScreen />
         ) : (
@@ -45,6 +49,7 @@ function Root() {
       <HealthPhotoSheet />
       <PetMenu />
       <PetForm />
+      <ScheduleForm />
       <EditRecordSheet />
     </>
   );

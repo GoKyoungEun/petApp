@@ -13,7 +13,7 @@
   - SDK 54를 쓰는 이유: 공개 Expo Go 앱이 SDK 54까지만 지원한다. 상위 SDK는 개발 빌드가 필요해 배포/테스트가 번거로워 54로 고정. (`AGENTS.md` 참고)
 - 주요 라이브러리: `@supabase/supabase-js`(서버), `@react-native-async-storage/async-storage`(세션·선택된 펫), `expo-web-browser`·`expo-linking`(소셜 로그인), `expo-image-picker`(사진 선택·촬영), `expo-image-manipulator`(저장 전 압축·리사이즈), `react-native-safe-area-context`(세이프 영역), `@tanstack/react-query`(서버 상태 관리)
 - 상태 관리: UI 상태는 React Context (`src/store.js`), 데이터는 **TanStack Query**. 화면은 훅으로 읽고, 쓰기는 store.js가 repo 호출 후 키 prefix를 invalidate. dataVersion 수동 무효화 방식은 쓰지 않는다.
-  - **[현재]** 기록(`src/queries/records.js`)·펫(`src/queries/pets.js`) 두 도메인 적용. 일정(`src/queries/schedules.js`)은 일정 화면과 함께 재구현 대상.
+  - **[현재]** 기록·펫·일정 세 도메인 모두 적용 (`src/queries/records.js`·`pets.js`·`schedules.js`).
 
 이유
 
@@ -29,7 +29,7 @@
 
 화면·스토어는 **async repository 인터페이스**에만 의존한다 (`src/repository.js` 기록, `src/petRepo.js` 반려동물, `src/scheduleRepo.js` 일정). 화면은 repo를 직접 부르지 않고 TanStack Query 훅(`src/queries/*.js`)을 거친다.
 
-- **[현재] 백킹은 Supabase다** (2026-08-03 재작성). 기록·펫 repo 2종. 일정 repo(`src/scheduleRepo.js`)는 일정 화면과 함께 만든다 — 테이블과 RLS는 이미 있다.
+- **[현재] 백킹은 Supabase다** (2026-08-03 재작성). 기록·펫·일정 repo 3종.
 - 인터페이스가 그대로여서 7/30 교체 때도, 8/3 재작성 때도 화면 코드는 한 줄도 바뀌지 않았다 — 설계 의도대로 동작한 셈이다.
 - 교체 후 남을 로컬 저장은 세션과 "선택된 펫"(`petapp:selectedPet:{user_id}`)뿐이다.
 - 기록은 이벤트 기반(HealthRecord) — `03_DB_Design` 참고.

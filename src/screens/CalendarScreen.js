@@ -5,10 +5,11 @@ import { colors } from '../theme';
 import { useStore, summarizeDay } from '../store';
 import { useRecordDates, useRecordsByDate } from '../queries/records';
 import { WEEKDAYS, formatDay, parseYmd, ymd, monthRows, weekRows } from '../date';
+import { scheduleTitle, scheduleIcon } from '../scheduleRepo';
 import { scaled } from '../scale';
 
 export default function CalendarScreen() {
-  const { petId, today, setTab, openRecords, openSheet } = useStore();
+  const { petId, today, setTab, openRecords, openSheet, schedules, openScheduleForm } = useStore();
 
   // Opens on the current month with today selected; the user's later navigation
   // is theirs to keep, so a midnight rollover must not yank the view back.
@@ -26,6 +27,17 @@ export default function CalendarScreen() {
   const { data: dayRecords = [] } = useRecordsByDate(petId, selected);
 
   const recordDates = useMemo(() => new Set(dates ?? []), [dates]);
+
+  // 05_UI_UX "일정은 별도 아이콘 또는 작은 배지로 표시한다" — 기록 점과 색을
+  // 달리해 한 칸에서 둘을 구분한다. 완료·취소된 일정은 표시하지 않는다.
+  const scheduleDates = useMemo(
+    () => new Set(schedules.filter((s) => s.status === 'planned').map((s) => s.scheduledDate)),
+    [schedules]
+  );
+  const daySchedules = useMemo(
+    () => schedules.filter((s) => s.scheduledDate === selected),
+    [schedules, selected]
+  );
   const rows = useMemo(
     () => (mode === 'week' ? weekRows(selected) : monthRows(view.year, view.month)),
     [mode, selected, view]
@@ -108,7 +120,10 @@ export default function CalendarScreen() {
                       {d.getDate()}
                     </Text>
                   </View>
-                  <View style={[styles.dot, has ? styles.dotOn : styles.dotOff]} />
+                  <View style={styles.marks}>
+                    <View style={[styles.dot, has ? styles.dotOn : styles.dotOff]} />
+                    {scheduleDates.has(dateStr) && <View style={[styles.dot, styles.dotSched]} />}
+                  </View>
                 </Pressable>
               );
             })}
@@ -133,6 +148,10 @@ export default function CalendarScreen() {
           <Text style={styles.legendText}>기록 있음</Text>
         </View>
         <View style={styles.legendItem}>
+          <View style={[styles.dot, styles.dotSched]} />
+          <Text style={styles.legendText}>일정</Text>
+        </View>
+        <View style={styles.legendItem}>
           <View style={styles.legendToday} />
           <Text style={styles.legendText}>오늘</Text>
         </View>
@@ -151,6 +170,24 @@ export default function CalendarScreen() {
 
       <ScrollView style={styles.panelBody} contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}>
+        {/* 그날의 일정을 기록보다 위에 둔다 — 날짜를 열어 보는 이유가 대개
+            "이날 뭐 해야 하지"라서다. 눌러 수정 시트로 간다. */}
+        {daySchedules.length > 0 && (
+          <View style={styles.schedList}>
+            {daySchedules.map((s) => (
+              <Pressable key={s.id} style={styles.schedRow} onPress={() => openScheduleForm(s)}>
+                <Icon name={scheduleIcon(s)} size={16} />
+                <Text style={styles.schedTitle}>{scheduleTitle(s)}</Text>
+                {s.status !== 'planned' && (
+                  <Text style={styles.schedDone}>
+                    {s.status === 'completed' ? '완료' : '취소'}
+                  </Text>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        )}
+
         {items.length > 0 ? (
           <View style={styles.recordCard}>
             {items.map((it, i) => (
@@ -215,9 +252,11 @@ const styles = StyleSheet.create(scaled({
   dayOutside: { color: colors.textGhost, fontWeight: '500' },
   dayTodayText: { color: '#fff', fontWeight: '800' },
   daySelectedText: { color: colors.primary, fontWeight: '800' },
+  marks: { flexDirection: 'row', gap: 3, height: 5, alignItems: 'center' },
   dot: { width: 5, height: 5, borderRadius: 3 },
   dotOn: { backgroundColor: colors.accent },
   dotOff: { backgroundColor: 'transparent' },
+  dotSched: { backgroundColor: colors.blue },
   toggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -251,6 +290,23 @@ const styles = StyleSheet.create(scaled({
   moreLink: { flexDirection: 'row', alignItems: 'center', gap: 1 },
   moreLinkText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   panelBody: { flex: 1, paddingHorizontal: 18 },
+  schedList: {
+    borderWidth: 1,
+    borderColor: colors.blueChip,
+    backgroundColor: colors.blueBg,
+    borderRadius: 16,
+    paddingVertical: 4,
+    marginBottom: 10,
+  },
+  schedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  schedTitle: { flex: 1, fontSize: 13, fontWeight: '700', color: colors.blueDark },
+  schedDone: { fontSize: 11, fontWeight: '700', color: colors.textMuted },
   recordCard: { borderWidth: 1, borderColor: colors.border, borderRadius: 16, overflow: 'hidden' },
   recRow: {
     flexDirection: 'row',

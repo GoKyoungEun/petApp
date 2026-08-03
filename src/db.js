@@ -59,6 +59,26 @@ export const petMapper = makeMapper({
 // 애초에 보내지 않는 편이 낫다.
 }, { readonly: ['userId'] });
 
+// 03_DB_Design "Schedule". linkedRecordId는 일정을 완료하며 만든 medical_records
+// 행을 가리킨다 — 아직 그 단계를 만들지 않아 늘 null이다(09_Todo 우선순위 3).
+export const scheduleMapper = makeMapper({
+  id: 'id',
+  petId: 'pet_id',
+  scheduleType: 'schedule_type',
+  customTypeName: 'custom_type_name',
+  scheduledDate: 'scheduled_date',
+  status: 'status',
+  hospitalName: 'hospital_name',
+  productName: 'product_name',
+  memo: 'memo',
+  repeatIntervalType: 'repeat_interval_type',
+  repeatIntervalValue: 'repeat_interval_value',
+  notificationSetting: 'notification_setting',
+  linkedRecordId: 'linked_record_id',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+}, { readonly: ['petId'] });
+
 // 03_DB_Design "HealthRecord". petId는 기록을 만든 뒤 다른 펫으로 옮기는 UI가
 // 없어서 patch 대상이 아니다.
 export const recordMapper = makeMapper({
