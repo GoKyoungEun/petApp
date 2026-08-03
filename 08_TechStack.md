@@ -11,7 +11,7 @@
 
 - **React Native + Expo SDK 54**
   - SDK 54를 쓰는 이유: 공개 Expo Go 앱이 SDK 54까지만 지원한다. 상위 SDK는 개발 빌드가 필요해 배포/테스트가 번거로워 54로 고정. (`AGENTS.md` 참고)
-- 주요 라이브러리: `@supabase/supabase-js`(서버), `@react-native-async-storage/async-storage`(세션·선택된 펫), `expo-web-browser`·`expo-linking`(소셜 로그인), `expo-image-picker`(사진 선택·촬영), `expo-image-manipulator`(저장 전 압축·리사이즈), `react-native-safe-area-context`(세이프 영역), `@tanstack/react-query`(서버 상태 관리)
+- 주요 라이브러리: `@supabase/supabase-js`(서버), `@react-native-async-storage/async-storage`(세션·선택된 펫), `expo-web-browser`·`expo-linking`(소셜 로그인), `expo-image-picker`(사진 선택·촬영), `expo-image-manipulator`(저장 전 압축·리사이즈), `react-native-svg`(통계 그래프), `react-native-safe-area-context`(세이프 영역), `@tanstack/react-query`(서버 상태 관리)
 - 상태 관리: UI 상태는 React Context (`src/store.js`), 데이터는 **TanStack Query**. 화면은 훅으로 읽고, 쓰기는 store.js가 repo 호출 후 키 prefix를 invalidate. dataVersion 수동 무효화 방식은 쓰지 않는다.
   - **[현재]** 기록·펫·일정 세 도메인 모두 적용 (`src/queries/records.js`·`pets.js`·`schedules.js`).
 
@@ -100,5 +100,9 @@ Supabase Storage `record-photos` 버킷(비공개) — `src/photoStore.js`가 �
 ## 통계
 
 MVP에서는 서버에서 집계하거나 기간별 원시 데이터를 받아 앱에서 계산할 수 있다.
+
+- **[현재]** 앱에서 계산한다. 기간의 원시 기록을 한 번 읽고(`recordRepo.listByRange`) 순수 함수로 집계한다(`src/stats.js`). 화면에서 떼어 둔 이유는 평균의 분모·빈 구간·정렬 의존이 눈으로 봐서 맞는지 알기 어렵고, 화면 안에 있으면 확인하려면 로그인부터 해야 하기 때문이다.
+- 이 조회는 사진 서명 URL을 만들지 않는다 — 통계는 사진을 쓰지 않는데 1년치면 수백 장에 서명하느라 왕복만 늘어난다.
+- 그래프는 `react-native-svg`. 몸무게 선 그래프의 x축은 순번이 아니라 날짜에 비례한다.
 
 사용량 증가 시 서버 집계 테이블 또는 배치 처리 검토가 필요하다.

@@ -140,6 +140,23 @@ export const recordRepo = {
     return signRecords(rowsToApp(data));
   },
 
+  // 한 기간의 모든 유형 — 통계 화면이 카드 여섯 장을 이 한 번의 조회로 만든다.
+  //
+  // 사진 서명 URL을 만들지 않는다. 통계는 사진을 쓰지 않는데, 1년치를 읽으면
+  // 수백 장에 서명하느라 왕복만 늘어난다(08_TechStack "이미지 저장").
+  async listByRange(petId, from, to) {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select(recordMapper.select)
+      .eq('pet_id', petId)
+      .gte('record_date', from)
+      .lte('record_date', to)
+      .order('record_date', { ascending: true })
+      .limit(MAX_ROWS);
+    if (error) throw error;
+    return rowsToApp(data);
+  },
+
   async update(id, patch) {
     const current = await readOne(id);
     if (!current) return null;
