@@ -103,42 +103,47 @@ function ScheduleCard({ schedule, today, done, onEdit, onComplete }) {
   const overdue = !done && days < 0;
 
   return (
-    <Pressable style={[styles.card, done && styles.cardDone]} onPress={onEdit}>
-      <View style={styles.cardIcon}>
-        <Icon name={scheduleIcon(schedule)} size={20} />
-      </View>
+    <View style={[styles.card, done && styles.cardDone]}>
+      {/* 내용을 누르면 수정, 아래 줄이 완료. 한 줄 안에 작은 완료 버튼을 겹쳐
+          두면 탭 영역이 좁고 어느 쪽이 눌릴지도 모호하다 — 아예 분리했다. */}
+      <Pressable style={styles.cardMain} onPress={onEdit}>
+        <View style={styles.cardIcon}>
+          <Icon name={scheduleIcon(schedule)} size={20} />
+        </View>
 
-      <View style={styles.cardBody}>
-        <Text style={[styles.cardTitle, done && styles.cardTitleDone]}>
-          {scheduleTitle(schedule)}
-        </Text>
-        <Text style={styles.cardDate}>
-          {formatDay(schedule.scheduledDate)}
-          {schedule.hospitalName ? ` · ${schedule.hospitalName}` : ''}
-        </Text>
-        {schedule.memo ? (
-          <Text style={styles.cardMemo} numberOfLines={1}>{schedule.memo}</Text>
-        ) : null}
-      </View>
+        <View style={styles.cardBody}>
+          <Text style={[styles.cardTitle, done && styles.cardTitleDone]}>
+            {scheduleTitle(schedule)}
+          </Text>
+          <Text style={styles.cardDate}>
+            {formatDay(schedule.scheduledDate)}
+            {schedule.hospitalName ? ` · ${schedule.hospitalName}` : ''}
+          </Text>
+          {schedule.memo ? (
+            <Text style={styles.cardMemo} numberOfLines={1}>{schedule.memo}</Text>
+          ) : null}
+        </View>
 
-      {done ? (
-        <Text style={styles.doneMark}>
-          {schedule.status === 'completed' ? '완료' : '취소'}
-        </Text>
-      ) : (
-        <View style={styles.cardRight}>
+        {done ? (
+          <Text style={styles.doneMark}>
+            {schedule.status === 'completed' ? '완료' : '취소'}
+          </Text>
+        ) : (
           <View style={[styles.dBadge, overdue && styles.dBadgeOver]}>
             <Text style={[styles.dBadgeText, overdue && styles.dBadgeTextOver]}>
               {days === 0 ? 'D-day' : days > 0 ? `D-${days}` : `D+${-days}`}
             </Text>
           </View>
-          <Pressable style={styles.doneBtn} onPress={onComplete} hitSlop={6}>
-            <Icon name="check" size={14} color={colors.good} />
-            <Text style={styles.doneBtnText}>완료</Text>
-          </Pressable>
-        </View>
+        )}
+      </Pressable>
+
+      {!done && (
+        <Pressable style={styles.completeBtn} onPress={onComplete}>
+          <Icon name="check" size={16} color={colors.good} />
+          <Text style={styles.completeText}>완료 처리</Text>
+        </Pressable>
       )}
-    </Pressable>
+    </View>
   );
 }
 
@@ -170,17 +175,20 @@ const styles = StyleSheet.create(scaled({
   list: { gap: 9 },
 
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
     backgroundColor: colors.surface,
+    overflow: 'hidden',
   },
   cardDone: { backgroundColor: colors.surfaceMuted },
+  cardMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+  },
   cardIcon: {
     width: 40,
     height: 40,
@@ -194,7 +202,6 @@ const styles = StyleSheet.create(scaled({
   cardTitleDone: { color: colors.textMuted },
   cardDate: { fontSize: 12, color: colors.textMuted },
   cardMemo: { fontSize: 11, color: colors.textFaint },
-  cardRight: { alignItems: 'flex-end', gap: 6 },
 
   dBadge: {
     backgroundColor: colors.blueChip,
@@ -206,8 +213,18 @@ const styles = StyleSheet.create(scaled({
   dBadgeText: { fontSize: 11, fontWeight: '800', color: colors.blueDark },
   dBadgeTextOver: { color: colors.badText },
 
-  doneBtn: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  doneBtnText: { fontSize: 11, fontWeight: '700', color: colors.good },
+  // 손가락 타깃 확보용 — 카드 폭 전체에 높이 46.
+  completeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 46,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+    backgroundColor: colors.goodBg,
+  },
+  completeText: { fontSize: 13, fontWeight: '800', color: colors.goodText },
   doneMark: { fontSize: 11, fontWeight: '700', color: colors.textGhost },
 
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },

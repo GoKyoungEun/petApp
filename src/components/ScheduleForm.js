@@ -186,7 +186,7 @@ export default function ScheduleForm() {
               </Pressable>
 
               {repeatOn && (
-                <View style={styles.repeatRow}>
+                <>
                   <View style={styles.stepper}>
                     <Pressable
                       style={styles.stepBtn}
@@ -198,20 +198,22 @@ export default function ScheduleForm() {
                       <Icon name="plus" size={14} color="#6B6259" />
                     </Pressable>
                   </View>
-                  <View style={styles.chipWrap}>
+                  {/* 스테퍼와 한 줄을 나눠 쓰면 넷 중 하나가 다음 줄로 떨어진다.
+                      자기 줄에서 폭을 균등하게 나눠 갖게 한다. */}
+                  <View style={styles.unitRow}>
                     {REPEAT_TYPES.map((r) => {
                       const on = r.key === repeatType;
                       return (
                         <Pressable
                           key={r.key}
-                          style={[styles.chip, on && styles.chipOn]}
+                          style={[styles.unitChip, on && styles.chipOn]}
                           onPress={() => setRepeatType(r.key)}>
                           <Text style={[styles.chipText, on && styles.chipTextOn]}>{r.label}</Text>
                         </Pressable>
                       );
                     })}
                   </View>
-                </View>
+                </>
               )}
               {repeatOn && (
                 <Text style={styles.hint}>완료 처리하면 다음 일정이 자동으로 생겨요</Text>
@@ -378,15 +380,26 @@ const styles = StyleSheet.create(scaled({
   toggleRowOn: { borderColor: colors.accent, backgroundColor: colors.peachLight },
   toggleText: { fontSize: 14, fontWeight: '600', color: colors.text },
 
-  repeatRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' },
+  unitRow: { flexDirection: 'row', gap: 7, marginTop: 7 },
+  unitChip: {
+    flex: 1, // 넷이 폭을 균등하게 — 줄바꿈이 생길 여지를 없앤다
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: 999,
+    paddingVertical: 9,
+    backgroundColor: colors.surface,
+  },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    gap: 18,
+    marginTop: 8,
     borderWidth: 1,
     borderColor: colors.borderStrong,
     borderRadius: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 10,
   },
   stepBtn: {
