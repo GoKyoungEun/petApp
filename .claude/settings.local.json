@@ -185,7 +185,8 @@
       "Bash(perl -0pi -e \"s/\\(export default function App\\\\\\(\\\\\\) \\\\{\\)/\\\\$1\\\\n  console.log\\('BOOT: App render'\\);/\" App.js)",
       "Bash(cp \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/4eab5bfb-dd1c-48b6-a0ca-9553d543b353/scratchpad/App.orig.js\" App.js)",
       "Bash(sed -i \"s|import { View, ActivityIndicator, StyleSheet } from 'react-native';|import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';|\" App.js)",
-      "Bash(EXPO_PUBLIC_SUPABASE_URL=\"\" EXPO_PUBLIC_SUPABASE_ANON_KEY=\"\" npx expo export --platform web --clear)"
+      "Bash(EXPO_PUBLIC_SUPABASE_URL=\"\" EXPO_PUBLIC_SUPABASE_ANON_KEY=\"\" npx expo export --platform web --clear)",
+      "Bash(git commit -m 'docs: 캐시 주의 문단을 빌드 절 아래로 *)"
     ]
   }
 }
