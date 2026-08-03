@@ -45,6 +45,22 @@ async function listAllPhotos(userId) {
 export async function deleteAccount() {
   const userId = await currentUserId();
 
+  // 0. 마지막 단계가 될지 먼저 확인한다.
+  //
+  // 계정 삭제 함수는 대시보드에서 따로 만들어야 하는데(anon key로는 auth.users를
+  // 못 지운다), 그걸 빠뜨린 채 탈퇴를 누르면 아래에서 데이터만 지워지고 계정이
+  // 남는다. 실제로 한 번 그렇게 기록을 날렸다. 아무것도 지우기 전에 찔러 본다.
+  const { error: probeError } = await supabase.rpc('delete_current_user', { dry_run: true });
+  if (probeError) {
+    if (probeError.code === 'PGRST202') {
+      throw new Error(
+        '서버에 계정 삭제 함수가 없습니다. supabase/schema.sql "회원 탈퇴"를 ' +
+          'SQL 편집기에서 실행한 뒤 다시 시도해 주세요. (데이터는 그대로입니다)'
+      );
+    }
+    throw probeError;
+  }
+
   // 1. 사진. 계정을 지운 뒤에는 Storage 정책이 막아 손댈 수 없다.
   const photos = await listAllPhotos(userId);
   if (photos.length) {
@@ -69,9 +85,8 @@ export async function deleteAccount() {
     .eq('user_id', userId);
   if (petError) throw petError;
 
-  // 3. 계정. anon key로는 auth.users를 지울 수 없어 SQL 함수를 거친다
-  //    (supabase/schema.sql "회원 탈퇴"). 대시보드에서 한 번 실행해 둬야 한다.
-  const { error } = await supabase.rpc('delete_current_user');
+  // 3. 계정. 0단계에서 이미 확인한 함수라 여기서 없을 리는 없다.
+  const { error } = await supabase.rpc('delete_current_user', { dry_run: false });
   if (error) throw error;
 
   // 세션 정리. 계정이 사라졌으므로 서버 호출은 실패할 수 있다 — 로컬만 비운다.

@@ -166,7 +166,9 @@
       "Bash(sed -i \"s|import { View, Text, Image, Pressable, ActivityIndicator, StyleSheet } from 'react-native';|import {\\\\n  View,\\\\n  Text,\\\\n  Image,\\\\n  Pressable,\\\\n  ActivityIndicator,\\\\n  Modal,\\\\n  ScrollView,\\\\n  StyleSheet,\\\\n} from 'react-native';\\\\nimport Icon from '../Icon';|\" src/screens/LoginScreen.js)",
       "Bash(sed -i \"s|import { signInWith, redirectTo } from '../auth';|import { signInWith, redirectTo } from '../auth';\\\\nimport { TERMS, PRIVACY } from '../legal';|\" src/screens/LoginScreen.js)",
       "Bash(sed -i \"s|^  const \\\\[error, setError\\\\] = useState\\(null\\);|  const [error, setError] = useState\\(null\\);\\\\n  // null | 'terms' | 'privacy'\\\\n  const [doc, setDoc] = useState\\(null\\);|\" src/screens/LoginScreen.js)",
-      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8085/)"
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8085/)",
+      "Bash(curl -s -X POST https://obuzyfpnvxbuuraqfphy.supabase.co/rest/v1/rpc/delete_current_user -H 'apikey: sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Authorization: Bearer sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Content-Type: application/json' -d '{}')",
+      "Bash(curl -s -X POST https://obuzyfpnvxbuuraqfphy.supabase.co/rest/v1/rpc/delete_current_user -H 'apikey: sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Authorization: Bearer sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Content-Type: application/json' -d '{\"dry_run\":true}')"
     ]
   }
 }

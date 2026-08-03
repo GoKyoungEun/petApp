@@ -276,9 +276,14 @@ alter table public.schedules
 --
 -- 앱은 이 함수를 부르기 전에 Storage 파일과 각 테이블 행을 먼저 지운다
 -- (src/account.js). cascade 설정에 기대지 않으려는 것이다.
+--
+-- dry_run이 있는 이유: 그 순서 때문에 이 함수가 없으면 데이터만 지워지고 계정이
+-- 남는다. 실제로 한 번 그랬다 — 함수를 만들기 전에 탈퇴를 눌러 기록이 다
+-- 날아갔다. 앱은 아무것도 지우기 전에 dry_run으로 한 번 찔러 보고, 함수가
+-- 없으면 그 자리에서 멈춘다.
 -- ---------------------------------------------------------------------------
 
-create or replace function public.delete_current_user()
+create or replace function public.delete_current_user(dry_run boolean default false)
 returns void
 language plpgsql
 security definer
@@ -289,6 +294,10 @@ declare
 begin
   if uid is null then
     raise exception '로그인이 필요합니다';
+  end if;
+  -- 있는지만 확인하는 호출. 여기서 돌아가면 진짜 호출도 성공한다.
+  if dry_run then
+    return;
   end if;
   delete from auth.users where id = uid;
 end;
