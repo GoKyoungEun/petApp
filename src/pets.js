@@ -1,6 +1,10 @@
 import { colors } from './theme';
 import { parseYmd, toYmd } from './date';
 
+// 02_MVP_Requirement §2 "계정당 최대 5마리". 펫 전환 메뉴와 MY 화면이 모두
+// 이 상한을 걸어야 해서 한 곳에 둔다.
+export const MAX_PETS = 5;
+
 // Species → presentation. Kept out of stored pet data so it stays derivable.
 export function speciesMeta(species) {
   return species === 'cat'

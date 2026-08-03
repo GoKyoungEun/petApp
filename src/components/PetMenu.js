@@ -3,10 +3,8 @@ import { Modal, View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
-import { speciesMeta, petSubtitle } from '../pets';
+import { speciesMeta, petSubtitle, MAX_PETS } from '../pets';
 import { scaled } from '../scale';
-
-const MAX_PETS = 5;
 
 export default function PetMenu() {
   const { pets, currentPetId, selectPet, showPetMenu, setShowPetMenu, openPetForm } =
