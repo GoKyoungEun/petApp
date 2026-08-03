@@ -168,7 +168,15 @@
       "Bash(sed -i \"s|^  const \\\\[error, setError\\\\] = useState\\(null\\);|  const [error, setError] = useState\\(null\\);\\\\n  // null | 'terms' | 'privacy'\\\\n  const [doc, setDoc] = useState\\(null\\);|\" src/screens/LoginScreen.js)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8085/)",
       "Bash(curl -s -X POST https://obuzyfpnvxbuuraqfphy.supabase.co/rest/v1/rpc/delete_current_user -H 'apikey: sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Authorization: Bearer sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Content-Type: application/json' -d '{}')",
-      "Bash(curl -s -X POST https://obuzyfpnvxbuuraqfphy.supabase.co/rest/v1/rpc/delete_current_user -H 'apikey: sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Authorization: Bearer sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Content-Type: application/json' -d '{\"dry_run\":true}')"
+      "Bash(curl -s -X POST https://obuzyfpnvxbuuraqfphy.supabase.co/rest/v1/rpc/delete_current_user -H 'apikey: sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Authorization: Bearer sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw' -H 'Content-Type: application/json' -d '{\"dry_run\":true}')",
+      "Bash(cp src/screens/LoginScreen.js \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/4eab5bfb-dd1c-48b6-a0ca-9553d543b353/scratchpad/LoginScreen.orig.js\")",
+      "Bash(sed -i \"s|import { TERMS, PRIVACY } from '../legal';|import { TERMS, PRIVACY } from '../legal';\\\\nimport PhotoViewer from '../components/PhotoViewer';|\" src/screens/LoginScreen.js)",
+      "Bash(sed -i \"s|      <LegalModal doc={doc} onClose={\\(\\) => setDoc\\(null\\)} />|      <LegalModal doc={doc} onClose={\\(\\) => setDoc\\(null\\)} />\\\\n      {__DEV__ ? \\(\\\\n        <PhotoViewer photos={['a','b','c','d']} index={2} onClose={\\(\\) => {}} />\\\\n      \\) : null}|\" src/screens/LoginScreen.js)",
+      "Bash(sed -i \"/^  photo: { width: '100%', height: '100%' },$/d\" src/components/PhotoViewer.js)",
+      "Bash(sed -i \"s|      {__DEV__ ? \\(\\\\n|      {\\(\\\\n|\" src/screens/LoginScreen.js)",
+      "Bash(perl -0pi -e \"s/\\\\{__DEV__ \\\\? \\\\\\(\\\\n        <PhotoViewer photos=\\\\['a','b','c','d'\\\\] index=\\\\{2\\\\} onClose=\\\\{\\\\\\(\\\\\\) => \\\\{\\\\}\\\\} \\\\/>\\\\n      \\\\\\) : null\\\\}/<PhotoViewer photos={['a','b','c','d']} index={2} onClose={\\(\\) => {}} \\\\/>/\" src/screens/LoginScreen.js)",
+      "Bash(cp \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/4eab5bfb-dd1c-48b6-a0ca-9553d543b353/scratchpad/LoginScreen.orig.js\" src/screens/LoginScreen.js)",
+      "Bash(rm -rf dist)"
     ]
   }
 }

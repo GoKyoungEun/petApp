@@ -7,6 +7,7 @@ import { useRecordsByType } from '../queries/records';
 import { formatDay, parseYmd } from '../date';
 import { scaled } from '../scale';
 import { PHOTO_CATEGORIES } from '../components/HealthPhotoSheet';
+import PhotoViewer from '../components/PhotoViewer';
 
 // Item tabs, fixed order per 05_UI_UX. key = recordType (healthPhoto has no
 // records yet — photos aren't attached to records in this pass).
@@ -80,6 +81,8 @@ export default function AllRecordsScreen() {
   const { petId, setTab, openSheet, openEditRecord, recordsType: type, setRecordsType: setType } =
     useStore();
   const [photoCat, setPhotoCat] = useState('전체');
+  // 크게 보고 있는 사진. null이면 닫힘. { photos, index }
+  const [viewer, setViewer] = useState(null);
 
   const isPhoto = type === 'healthPhoto';
   const { data: records = [] } = useRecordsByType(petId, type);
@@ -180,24 +183,38 @@ export default function AllRecordsScreen() {
             <View key={date} style={styles.card}>
               <Text style={styles.cardDate}>{formatDate(date)}</Text>
               {items.map((r) => (
-                <Pressable
-                  key={r.id}
-                  style={styles.entryBlock}
-                  onPress={() => openEditRecord(r)}>
+                // 블록 전체를 누르게 두지 않는다. 사진마다 크게 보기가 붙으면서
+                // 겹친 Pressable이 되고, 어디를 눌러야 수정인지 모호해진다.
+                <View key={r.id} style={styles.entryBlock}>
                   <View style={styles.entry}>
                     <View style={styles.dot} />
                     <Text style={styles.entryText}>{describe(type, r)}</Text>
-                    <Icon name="edit" size={13} color={colors.textGhost} />
+                    <Pressable
+                      style={styles.editBtn}
+                      onPress={() => openEditRecord(r)}
+                      hitSlop={8}>
+                      <Icon name="edit" size={14} color={colors.textMuted} />
+                      <Text style={styles.editBtnText}>수정</Text>
+                    </Pressable>
                   </View>
                   {r.memo ? <Text style={styles.entryMemo}>{r.memo}</Text> : null}
-                  {/* 3열 격자로 모두 표시 — 최대 6장이면 3열 2행 (02 §6) */}
+                  {/* 3열 격자로 모두 표시 — 최대 6장이면 3열 2행 (02 §6).
+                      누르면 화면 가득 열리고 좌우로 넘어간다. */}
                   {r.data?.photos?.length ? (
                     <View style={styles.photoGrid}>
                       {rowsOf3(r.data.photos).map((row, ri) => (
                         <View key={ri} style={styles.photoRow}>
-                          {row.map((uri, i) => (
-                            <Image key={i} source={{ uri }} style={styles.entryPhoto} />
-                          ))}
+                          {row.map((uri, i) => {
+                            const at = ri * 3 + i;
+                            return (
+                              <Pressable
+                                key={i}
+                                style={styles.photoCell}
+                                onPress={() => setViewer({ photos: r.data.photos, index: at })}>
+                                <Image source={{ uri }} style={styles.entryPhoto} />
+                              </Pressable>
+                            );
+                          })}
                           {Array.from({ length: 3 - row.length }, (_, i) => (
                             <View key={`f${i}`} style={styles.photoFiller} />
                           ))}
@@ -205,7 +222,7 @@ export default function AllRecordsScreen() {
                       ))}
                     </View>
                   ) : null}
-                </Pressable>
+                </View>
               ))}
               {(type === 'urine' || type === 'vomit') && (
                 <Text style={styles.countHint}>총 {items.length}회</Text>
@@ -214,6 +231,13 @@ export default function AllRecordsScreen() {
           ))
         )}
       </ScrollView>
+
+      <PhotoViewer
+        photos={viewer?.photos}
+        index={viewer?.index ?? 0}
+        onClose={() => setViewer(null)}
+        onIndexChange={(i) => setViewer((v) => (v ? { ...v, index: i } : v))}
+      />
     </View>
   );
 }
@@ -266,6 +290,19 @@ const styles = StyleSheet.create(scaled({
   cardDate: { fontSize: 13, fontWeight: '800', color: colors.text },
   entryBlock: { gap: 7 },
   entry: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  // 아이콘만 있던 자리를 글자까지 붙인 버튼으로. 사진이 눌리게 되면서 "여기가
+  // 수정"이라는 것이 더 분명해야 한다.
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+  },
+  editBtnText: { fontSize: 12, color: colors.textMuted, fontWeight: '700' },
   dot: {
     width: 6,
     height: 6,
@@ -277,7 +314,9 @@ const styles = StyleSheet.create(scaled({
   photoGrid: { marginLeft: 15, gap: 6 },
   photoRow: { flexDirection: 'row', gap: 6 },
   photoFiller: { flex: 1 },
-  entryPhoto: { flex: 1, aspectRatio: 1, borderRadius: 10, backgroundColor: colors.surfaceMuted },
+  // 사진 자체가 탭 영역이다. 격자 한 칸이 화면 폭의 1/3쯤이라 충분히 크다.
+  photoCell: { flex: 1 },
+  entryPhoto: { width: '100%', aspectRatio: 1, borderRadius: 10, backgroundColor: colors.surfaceMuted },
   countHint: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
   emptyWrap: { alignItems: 'center', paddingTop: 70, gap: 14 },
   emptyText: { fontSize: 13, color: colors.textMuted },
