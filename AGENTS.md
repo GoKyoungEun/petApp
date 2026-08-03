@@ -84,6 +84,42 @@ node tools/make-app-icons.js
 새 그림에 맞춰야 한다. 그 대역이 그림 안의 다른 요소와 겹치지 않는지도
 확인한다 — 겹치면 그 부분이 배경으로 오인돼 함께 파인다.
 
+# 안드로이드 앱으로 빌드하기
+
+로컬 빌드는 안드로이드 SDK가 필요하다. 없으면 **EAS 클라우드 빌드**를 쓴다 —
+SDK 없이 설치 가능한 APK가 나온다.
+
+```bash
+npx eas-cli login          # Expo 계정. 없으면 expo.dev에서 먼저 가입
+npx eas-cli init           # 프로젝트를 계정에 연결 (app.json에 projectId를 쓴다)
+npx eas-cli build -p android --profile preview
+```
+
+`preview` 프로필은 APK를 만든다(`eas.json`). 폰에 바로 설치해 보는 용도다.
+스토어에 올릴 때는 `--profile production`으로 AAB를 만든다.
+
+**환경변수를 따로 넣어야 한다.** `.env`는 `.gitignore`에 있고 EAS는 git에 없는
+파일을 올리지 않는다. 그대로 빌드하면 앱이 켜지자마자 `src/supabase.js`의
+"환경변수가 없습니다" 오류로 멈춘다. 한 번만 등록해 두면 된다:
+
+```bash
+npx eas-cli env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://<project-ref>.supabase.co" --visibility plaintext --environment preview --environment production
+npx eas-cli env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "<anon key>" --visibility plaintext --environment preview --environment production
+```
+
+`plaintext`인 이유: `EXPO_PUBLIC_*`은 번들에 그대로 박혀 APK를 뜯으면 누구나
+읽는다. 감춰 봐야 감춰지지 않고, 실제 방어선은 RLS다(08_TechStack).
+
+빌드 전에 확인할 것
+
+- `android.package`(`kr.co.outspring.banryeojangsaeng`)는 **한 번 스토어에 올리면
+  바꿀 수 없다.** 처음 빌드 전에 확정한다.
+- Supabase Redirect URLs에 `petapp://**`가 있어야 소셜 로그인이 돌아온다.
+  Expo Go의 `exp://`와 달리 독립 빌드는 `app.json`의 `scheme`을 쓴다.
+- 카메라·사진 권한 문구는 `expo-image-picker` 플러그인 설정에 있다. 마이크
+  권한은 `blockedPermissions`로 막아 뒀다 — 이 앱은 영상을 쓰지 않는데
+  플러그인이 기본으로 붙인다.
+
 # 문서 구조
 
 기획 문서는 번호 순서를 지킨다. 작업 상태를 적을 때 셋의 역할이 겹치지

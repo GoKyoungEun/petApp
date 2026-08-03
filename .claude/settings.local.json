@@ -176,7 +176,8 @@
       "Bash(sed -i \"s|      {__DEV__ ? \\(\\\\n|      {\\(\\\\n|\" src/screens/LoginScreen.js)",
       "Bash(perl -0pi -e \"s/\\\\{__DEV__ \\\\? \\\\\\(\\\\n        <PhotoViewer photos=\\\\['a','b','c','d'\\\\] index=\\\\{2\\\\} onClose=\\\\{\\\\\\(\\\\\\) => \\\\{\\\\}\\\\} \\\\/>\\\\n      \\\\\\) : null\\\\}/<PhotoViewer photos={['a','b','c','d']} index={2} onClose={\\(\\) => {}} \\\\/>/\" src/screens/LoginScreen.js)",
       "Bash(cp \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/4eab5bfb-dd1c-48b6-a0ca-9553d543b353/scratchpad/LoginScreen.orig.js\" src/screens/LoginScreen.js)",
-      "Bash(rm -rf dist)"
+      "Bash(rm -rf dist)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('app.json','utf8'\\)\\);JSON.parse\\(require\\('fs'\\).readFileSync\\('eas.json','utf8'\\)\\);console.log\\('app.json / eas.json 유효'\\)\")"
     ]
   }
 }

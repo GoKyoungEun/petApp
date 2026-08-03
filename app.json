@@ -11,6 +11,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "kr.co.outspring.banryeojangsaeng",
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"],
       "adaptiveIcon": {
         "backgroundColor": "#B85C2E",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -31,7 +33,14 @@
           "backgroundColor": "#FFEFD6"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "건강사진과 반려동물 사진을 등록하려면 사진 접근이 필요해요.",
+          "cameraPermission": "지금 찍은 사진을 기록에 남기려면 카메라 접근이 필요해요."
+        }
+      ]
     ]
   }
 }
