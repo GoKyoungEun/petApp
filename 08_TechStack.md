@@ -44,7 +44,7 @@
 
 **Supabase**로 확정 — 관계형/이벤트 스키마 적합성, Auth(카카오·구글·애플 OAuth 지원), Storage, 무료 티어. 프로젝트 생성·스키마 실행 완료(03_DB_Design 기반, RLS 포함) — **서버에 그대로 살아 있다.**
 
-- **[현재]** 앱 쪽 코드는 2026-08-03에 재작성했다 — `supabase/schema.sql` 사본, `src/supabase.js`, `src/auth.js`, `src/db.js`, `src/photoStore.js`, `src/screens/LoginScreen.js`, repo 2종 교체. **다만 `.env`가 없어 서버에 붙여 검증하지 못했다** — 대시보드 Settings → API에서 URL·anon key를 받아 `.env.example`대로 채운다. 남은 검증 항목은 09_Todo "검증이 남은 것".
+- **[현재]** 앱 쪽 코드는 2026-08-03에 재작성했고 **같은 날 실기기(Expo Go)로 한 바퀴 검증했다** — `supabase/schema.sql` 사본, `src/supabase.js`, `src/auth.js`, `src/db.js`, `src/photoStore.js`, `src/screens/LoginScreen.js`, repo 3종. 확인 범위는 09_Todo "실기기 검증". 새 컴퓨터에서는 `.env`를 대시보드 Settings → API에서 받아 `.env.example`대로 채운다.
 - 소셜 로그인: 카카오·구글 연동은 2026-07-30 실기기까지 확인했고 **콘솔 설정은 유지된다**. 앱 코드만 다시 붙이면 된다. 애플은 추후 추가 (iOS 앱스토어 배포 시 필수)
   - 카카오 설정값: Redirect URI `https://<project>.supabase.co/auth/v1/callback`(카카오 콘솔), 대표/사이트 도메인은 같은 주소에서 경로만 뗀 것. Client ID = 카카오 **REST API 키**. Web 플랫폼을 먼저 등록해야 Redirect URI 칸이 열린다.
   - Supabase의 카카오 provider는 기본 scope에 `account_email`이 들어간다. 이메일 동의항목이 없으면 카카오가 거부하는데(KOE205 계열), 이 프로젝트에서는 통과했다. 막힐 경우 `signInWithOAuth`의 `scopes`로 이메일을 빼면 된다 — 앱은 이메일 없는 계정을 이미 처리한다(MyScreen `user?.email || '카카오 계정'`).
