@@ -15,8 +15,13 @@
 재발 방지로 git 저장소를 만들고 원격(GitHub)에 연결했다. 이후 작업은
 Phase 브랜치에서 진행한다.
 
-## 현재 저장소에 있는 것 (2026-08-01)
+## 현재 저장소에 있는 것 (2026-08-03)
 
+- **Supabase 연동** — 로그인 게이트(구글·카카오, `src/screens/LoginScreen.js`),
+  클라이언트 `src/supabase.js`, 인증 `src/auth.js`, 컬럼 매퍼 `src/db.js`,
+  사진 저장 `src/photoStore.js`, 스키마 사본 `supabase/schema.sql`.
+  기록·펫 repo 2종이 Supabase 호출로 바뀌었고 화면 코드는 그대로다.
+  쓰기 실패는 시트 안에 표시(`src/components/SheetError.js`)
 - 홈 + 빠른 기록(2스텝 사진·메모 첨부), 종별 분기, 실행취소 스낵바
 - 오늘도 평소와 같아요(어제 기록 복사 + 없으면 토스트)
 - repository 계층 + AsyncStorage 영속화
@@ -35,12 +40,26 @@ Phase 브랜치에서 진행한다.
 ## 재구현이 필요한 것
 
 아래 "완료" 목록 중 현재 저장소에 없는 것 — 통계 화면, 몸무게 전용 화면,
-건강 일정 탭, 캘린더 월↔주 축소, 마이페이지, 일정 도메인 Query,
-Supabase 연동 일체(`supabase.js`·`db.js`·`auth.js`·`photoStore.js`·
-`LoginScreen`·repo 3종 교체), 카카오·구글 로그인.
+건강 일정 탭(+ `scheduleRepo.js`·일정 도메인 Query), 캘린더 월↔주 축소,
+마이페이지.
 
-사진은 지금 `data.photos`에 data URI로 들어간다. Supabase로 옮길 때
-Storage 업로드 + 경로 저장으로 바꾼다(08_TechStack "이미지 저장").
+일정 repo와 Query는 일정 화면과 함께 만든다. 테이블(`schedules`·
+`medical_records`)과 RLS는 `supabase/schema.sql`에 이미 있다.
+
+### 검증이 남은 것 (2026-08-03)
+
+Supabase 연동 코드는 다시 썼지만 **실제 서버에 붙여 보지 못했다.** 이 컴퓨터에
+`.env`가 없어서다(대시보드 Settings → API에서 받아 `.env.example`대로 채운다).
+웹 번들 빌드와 로그인 화면 렌더까지만 확인했다. 키를 받은 뒤 한 바퀴 돌려야
+하는 것:
+
+1. 구글·카카오 로그인 → 세션 유지 → 로그아웃. Expo Go는 `exp://**`가 Supabase
+   Redirect URLs에 등록돼 있어야 한다(08_TechStack)
+2. 펫 등록(사진 포함) → 기록 저장·수정·삭제 → 캘린더·전체기록 반영
+3. 건강사진 업로드 → 서명 URL로 표시 → 수정 시트에서 추가·삭제 → Storage에
+   지운 파일이 남지 않는지
+4. `supabase/schema.sql`을 대시보드의 실제 스키마와 대조 (이 파일은 유실된
+   원본을 03_DB_Design에서 다시 쓴 사본이다)
 
 ## 유실 전 구현 현황 (2026-07-29 기준 — 설계 근거로 보존)
 

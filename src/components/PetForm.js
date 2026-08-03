@@ -18,10 +18,12 @@ import { useStore } from '../store';
 import { speciesMeta, birthDateFromAge, ageYears } from '../pets';
 import { scaled } from '../scale';
 import { isValidYmd } from '../date';
+import SheetError from './SheetError';
 
 export default function PetForm() {
-  const { showPetForm, closePetForm, addPet, updatePet, removePet, editingPetId, pets } =
-    useStore();
+  const {
+    showPetForm, closePetForm, addPet, updatePet, removePet, editingPetId, pets, writeError,
+  } = useStore();
 
   const editingPet = pets.find((p) => p.id === editingPetId) || null;
   const isEdit = !!editingPet;
@@ -254,6 +256,8 @@ export default function PetForm() {
               />
             </Field>
           </ScrollView>
+
+          <SheetError message={writeError} />
 
           <Pressable
             style={[styles.saveBtn, !canSave && styles.saveBtnOff]}

@@ -76,6 +76,14 @@ export function summarizeDay(records) {
   }));
 }
 
+// Writes fail for reasons the user can act on (offline) and reasons they can't
+// (RLS, a bad column). Lead with what didn't happen, then append the underlying
+// message — without it a failed save is indistinguishable from a frozen button.
+function writeMessage(e, fallback) {
+  const detail = typeof e?.message === 'string' ? e.message.trim() : '';
+  return detail ? `${fallback}\n${detail}` : fallback;
+}
+
 export function StoreProvider({ children }) {
   const [tab, setTab] = useState('home');
 
@@ -104,13 +112,19 @@ export function StoreProvider({ children }) {
     };
   }, [today]);
 
-  // Pets come from the query cache (seeds 코코·보리 on first run); which one is
-  // selected is UI state and stays here.
-  const { data: pets = [] } = usePets();
+  // Pets come from the query cache; which one is selected is UI state and stays
+  // here. A new account starts with an empty list — there is no seed data.
+  const { data: pets = [], isSuccess: petsLoaded } = usePets();
   const [currentPetId, setCurrentPetId] = useState(null);
   const [showPetMenu, setShowPetMenu] = useState(false);
   const [showPetForm, setShowPetForm] = useState(false);
   const [editingPetId, setEditingPetId] = useState(null); // null = create mode
+
+  // A write that failed (network, RLS, storage). Snackbars and toasts can't
+  // render above a Modal, so a sheet that fails while open shows this inline
+  // instead (08_TechStack "실패 처리").
+  const [writeError, setWriteError] = useState(null);
+  const clearWriteError = useCallback(() => setWriteError(null), []);
 
   const currentPet = pets.find((p) => p.id === currentPetId) || null;
   const petId = currentPet?.id ?? null;
@@ -129,6 +143,17 @@ export function StoreProvider({ children }) {
       setCurrentPetId(saved && pets.some((p) => p.id === saved) ? saved : pets[0].id);
     })();
   }, [pets]);
+
+  // Every screen is "the current pet's ...", so an account with no pets has
+  // nothing to show — open the registration form instead of an empty home
+  // (08_TechStack: no seed data, each account starts empty). This only fires on
+  // the transition, so closing the form doesn't immediately reopen it.
+  useEffect(() => {
+    if (petsLoaded && pets.length === 0) {
+      setEditingPetId(null);
+      setShowPetForm(true);
+    }
+  }, [petsLoaded, pets.length]);
 
   // Which item tab 전체 기록보기 opens on. Lives here so the calendar can jump
   // straight to one item (06_UserFlow "항목 선택 시 수정") — its day panel shows
@@ -167,44 +192,65 @@ export function StoreProvider({ children }) {
   const openPetForm = useCallback((id = null) => {
     setEditingPetId(id);
     setShowPetMenu(false);
+    setWriteError(null);
     setShowPetForm(true);
   }, []);
 
   const closePetForm = useCallback(() => {
     setShowPetForm(false);
     setEditingPetId(null);
+    setWriteError(null);
   }, []);
 
   const addPet = useCallback(async (data) => {
-    const created = await petRepo.add(data);
-    await invalidatePets();
-    setCurrentPetId(created.id);
-    await petRepo.setSelectedId(created.id);
-    closePetForm();
-    return created;
+    try {
+      setWriteError(null);
+      const created = await petRepo.add(data);
+      await invalidatePets();
+      setCurrentPetId(created.id);
+      await petRepo.setSelectedId(created.id);
+      closePetForm();
+      return created;
+    } catch (e) {
+      setWriteError(writeMessage(e, '반려동물을 등록하지 못했습니다'));
+      return null;
+    }
   }, [closePetForm]);
 
   const updatePet = useCallback(async (id, data) => {
-    await petRepo.update(id, data);
-    await invalidatePets();
-    closePetForm();
+    try {
+      setWriteError(null);
+      await petRepo.update(id, data);
+      await invalidatePets();
+      closePetForm();
+    } catch (e) {
+      setWriteError(writeMessage(e, '수정하지 못했습니다'));
+    }
   }, [closePetForm]);
 
   const removePet = useCallback(
     async (id) => {
-      await petRepo.remove(id);
-      await recordRepo.removeByPet(id); // cascade — no orphan records
-      await invalidatePets();
-      await invalidateRecords(id);
-      if (id === currentPetId) {
-        // Read the fresh list directly: the query refetch may not have landed
-        // yet, and the next selection has to be right now.
-        const list = await petRepo.list();
-        const next = list[0]?.id ?? null;
-        setCurrentPetId(next);
-        await petRepo.setSelectedId(next);
+      try {
+        setWriteError(null);
+        // Records go first. The DB cascades them when the pet row goes, but
+        // that would take their Storage paths with it and leave the photo files
+        // behind — removeByPet reads the paths before deleting.
+        await recordRepo.removeByPet(id);
+        await petRepo.remove(id);
+        await invalidatePets();
+        await invalidateRecords(id);
+        if (id === currentPetId) {
+          // Read the fresh list directly: the query refetch may not have landed
+          // yet, and the next selection has to be right now.
+          const list = await petRepo.list();
+          const next = list[0]?.id ?? null;
+          setCurrentPetId(next);
+          await petRepo.setSelectedId(next);
+        }
+        closePetForm();
+      } catch (e) {
+        setWriteError(writeMessage(e, '삭제하지 못했습니다'));
       }
-      closePetForm();
     },
     [currentPetId, closePetForm]
   );
@@ -246,12 +292,14 @@ export function StoreProvider({ children }) {
     if (name === 'walk') setWalkMin(20);
     setCondStage('main');
     setSheetFromMore(fromMore);
+    setWriteError(null);
     setSheet(name);
   }, []);
 
   const closeSheet = useCallback(() => {
     setSheet(null);
     setCondStage('main');
+    setWriteError(null);
   }, []);
 
   // Create one or more event records, then surface the snackbar. The ids are
@@ -260,15 +308,26 @@ export function StoreProvider({ children }) {
   const addRecords = useCallback(
     async (entries, msg) => {
       const added = [];
-      for (const e of entries) {
-        const rec = await recordRepo.add({
-          petId,
-          recordDate: today,
-          recordType: e.recordType,
-          data: e.data || {},
-          memo: e.memo ?? null,
-        });
-        added.push(rec.id);
+      try {
+        setWriteError(null);
+        for (const e of entries) {
+          const rec = await recordRepo.add({
+            petId,
+            recordDate: today,
+            recordType: e.recordType,
+            data: e.data || {},
+            memo: e.memo ?? null,
+          });
+          added.push(rec.id);
+        }
+      } catch (e) {
+        // Partial batches happen: "오늘도 평소와 같아요" writes several rows and
+        // the third can fail. Keep what landed (undo still targets exactly it)
+        // and leave the sheet open with the reason.
+        lastBatch.current = added;
+        await invalidateRecords(petId);
+        setWriteError(writeMessage(e, '저장하지 못했습니다'));
+        return;
       }
       lastBatch.current = added;
       await invalidateRecords(petId);
@@ -286,36 +345,57 @@ export function StoreProvider({ children }) {
   // batch, so offering it here would delete the wrong rows.
   const [editingRecord, setEditingRecord] = useState(null);
 
-  const openEditRecord = useCallback((record) => setEditingRecord(record), []);
-  const closeEditRecord = useCallback(() => setEditingRecord(null), []);
+  const openEditRecord = useCallback((record) => {
+    setWriteError(null);
+    setEditingRecord(record);
+  }, []);
+  const closeEditRecord = useCallback(() => {
+    setEditingRecord(null);
+    setWriteError(null);
+  }, []);
 
   const updateRecord = useCallback(
     async (id, patch) => {
-      await recordRepo.update(id, patch); // repo stamps updatedAt
-      await invalidateRecords(petId);
-      setEditingRecord(null);
-      showToast('수정되었습니다');
+      try {
+        setWriteError(null);
+        await recordRepo.update(id, patch); // DB trigger stamps updated_at
+        await invalidateRecords(petId);
+        setEditingRecord(null);
+        showToast('수정되었습니다');
+      } catch (e) {
+        setWriteError(writeMessage(e, '수정하지 못했습니다'));
+      }
     },
     [petId, showToast]
   );
 
   const deleteRecord = useCallback(
     async (id) => {
-      await recordRepo.remove(id);
-      await invalidateRecords(petId);
-      setEditingRecord(null);
-      showToast('삭제되었습니다');
+      try {
+        setWriteError(null);
+        await recordRepo.remove(id);
+        await invalidateRecords(petId);
+        setEditingRecord(null);
+        showToast('삭제되었습니다');
+      } catch (e) {
+        setWriteError(writeMessage(e, '삭제하지 못했습니다'));
+      }
     },
     [petId, showToast]
   );
 
   const undo = useCallback(async () => {
     clearSnackTimer();
-    for (const id of lastBatch.current) await recordRepo.remove(id);
-    lastBatch.current = [];
-    await invalidateRecords(petId);
     setSnack(null);
-  }, [clearSnackTimer, petId]);
+    try {
+      for (const id of lastBatch.current) await recordRepo.remove(id);
+      lastBatch.current = [];
+    } catch (e) {
+      // No sheet is open here, so the toast is visible.
+      showToast('실행취소하지 못했습니다');
+    }
+    await invalidateRecords(petId);
+  }, [clearSnackTimer, petId, showToast]);
 
   const toggleSymptom = useCallback((op) => {
     setSymptoms((cur) =>
@@ -374,6 +454,8 @@ export function StoreProvider({ children }) {
     snack,
     toast,
     showToast,
+    writeError,
+    clearWriteError,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

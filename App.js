@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import { colors } from './src/theme';
 import { queryClient } from './src/queryClient';
 import { StoreProvider, useStore } from './src/store';
+import { getSession, onAuthChange } from './src/auth';
 import HomeScreen from './src/screens/HomeScreen';
 import AllRecordsScreen from './src/screens/AllRecordsScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import StubScreen from './src/screens/StubScreen';
+import LoginScreen from './src/screens/LoginScreen';
 import BottomNav from './src/components/BottomNav';
 import QuickRecordSheet from './src/components/QuickRecordSheet';
 import Snackbar from './src/components/Snackbar';
@@ -22,8 +24,7 @@ import HealthPhotoSheet from './src/components/HealthPhotoSheet';
 function Root() {
   const { tab } = useStore();
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <StatusBar style="dark" />
+    <>
       <View style={styles.screen}>
         {tab === 'home' ? (
           <HomeScreen />
@@ -42,18 +43,57 @@ function Root() {
       <PetMenu />
       <PetForm />
       <EditRecordSheet />
-    </SafeAreaView>
+    </>
+  );
+}
+
+// 로그인 게이트. 세션이 없으면 앱 본체를 마운트하지 않는다 —
+// 11_ChangeLog 2026-07-29 "로그인 필수". 모든 데이터가 RLS 뒤에 있어서
+// 세션 없이 마운트해 봐야 빈 화면에 실패한 조회만 쌓인다.
+function AuthGate() {
+  // undefined = 아직 확인 중. null(로그아웃)과 구분해야 앱을 켤 때마다
+  // 로그인 화면이 한 번 번쩍이지 않는다.
+  const [session, setSession] = useState(undefined);
+
+  useEffect(() => {
+    getSession().then(setSession).catch(() => setSession(null));
+    // 로그인·로그아웃뿐 아니라 토큰 갱신과 재시작 복원도 여기로 들어온다.
+    return onAuthChange(setSession);
+  }, []);
+
+  // 계정이 바뀌면 이전 계정의 기록이 캐시에 남아 잠깐 보인다. 로그아웃 시점에
+  // 통째로 비운다.
+  useEffect(() => {
+    if (session === null) queryClient.clear();
+  }, [session]);
+
+  if (session === undefined) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!session) return <LoginScreen />;
+
+  return (
+    // key: 계정이 바뀌면 store의 지역 상태(선택된 펫, 열린 시트)까지 새로 시작한다.
+    <StoreProvider key={session.user.id}>
+      <Root />
+    </StoreProvider>
   );
 }
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      {/* Outside StoreProvider — the store reads its data through query hooks. */}
+      {/* StoreProvider 바깥 — store는 자기 데이터를 query 훅으로 읽는다. */}
       <QueryClientProvider client={queryClient}>
-        <StoreProvider>
-          <Root />
-        </StoreProvider>
+        <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+          <StatusBar style="dark" />
+          <AuthGate />
+        </SafeAreaView>
       </QueryClientProvider>
     </SafeAreaProvider>
   );
@@ -62,4 +102,5 @@ export default function App() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
   screen: { flex: 1, backgroundColor: '#fff' },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

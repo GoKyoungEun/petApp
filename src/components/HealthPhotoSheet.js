@@ -27,11 +27,12 @@ import { useStore } from '../store';
 import { scaled } from '../scale';
 import { MAX_PHOTOS } from '../repository';
 import { pickRecordPhotos, captureRecordPhoto } from '../photo';
+import SheetError from './SheetError';
 
 export const PHOTO_CATEGORIES = ['눈', '코', '발', '피부 및 모질', '기타'];
 
 export default function HealthPhotoSheet() {
-  const { sheet, closeSheet, openSheet, sheetFromMore, addRecord } = useStore();
+  const { sheet, closeSheet, openSheet, sheetFromMore, addRecord, writeError } = useStore();
 
   const visible = sheet === 'photo';
 
@@ -172,6 +173,8 @@ export default function HealthPhotoSheet() {
               </Pressable>
             )}
           </ScrollView>
+
+          <SheetError message={writeError} />
 
           <Pressable
             style={[styles.saveBtn, !canSave && styles.saveBtnOff]}

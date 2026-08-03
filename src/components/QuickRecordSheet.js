@@ -19,6 +19,7 @@ import { scaled } from '../scale';
 import { formatDot } from '../date';
 import { MAX_PHOTOS } from '../repository';
 import { pickRecordPhotos } from '../photo';
+import SheetError from './SheetError';
 
 const SYMPTOM_OPTS = [
   '식욕 저하', '기운 없음', '구토', '설사', '기침',
@@ -33,7 +34,7 @@ export default function QuickRecordSheet() {
     sheet, sheetFromMore, closeSheet, openSheet, addRecord, today,
     condStage, setCondStage,
     walkMin, setWalkMin, weightVal, setWeightVal,
-    symptoms, toggleSymptom,
+    symptoms, toggleSymptom, writeError,
   } = useStore();
 
   // Two-step state for attach-capable sheets.
@@ -292,6 +293,9 @@ export default function QuickRecordSheet() {
               <MemoSheet onClose={closeSheet} onBack={backToMore} addRecord={addRecord} />
             )}
           </ScrollView>
+          {/* Sheet-wide: every branch above saves through the store, and any of
+              them can fail. Sits below the scroll area so it stays visible. */}
+          <SheetError message={writeError} />
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
