@@ -18,12 +18,26 @@ npx expo start
 띄울 화면 자체가 없어서, `src/supabase.js`가 시작하자마자 멈춘다. 값은
 대시보드 Settings → API에서 받는다.
 
-Expo Go로 QR을 찍으면 폰에서 열린다. 폰과 PC가 같은 WiFi에 있어야 하고,
-다른 네트워크면 `npx expo start --tunnel`을 쓴다.
+Expo Go로 QR을 찍으면 폰에서 열린다.
 
-소셜 로그인을 실기기에서 테스트하려면 Supabase Authentication → URL
-Configuration의 Redirect URLs에 `exp://**`가 있어야 한다. Expo Go는 커스텀
-scheme(`petapp://`)을 못 쓰고 매번 바뀌는 `exp://` 주소로 돌아온다.
+**로그인을 테스트하려면 터널로 띄워야 한다:**
+
+```bash
+npx expo start --tunnel
+```
+
+같은 WiFi여도 LAN 모드로는 소셜 로그인이 안 된다. Expo Go가 `exp://<LAN
+IP>:8081/--/auth/callback`으로 돌아오려 하는데, Supabase가 루프백이 아닌 IP
+주소를 리디렉트 대상에서 거부하기 때문이다. 허용 목록에 무엇을 넣어도 안
+된다. 터널은 IP 대신 `*.exp.direct` 호스트명을 준다.
+
+증상이 헷갈린다 — 구글 인증은 성공해서 `auth.users`에 계정이 생기는데,
+브라우저만 Site URL로 떨어져 "사이트에 접근할 수 없습니다"가 뜨고 앱은 세션
+없이 로그인 화면으로 돌아온다. 자세한 내용과 확인 방법은 08_TechStack
+"백엔드".
+
+Supabase Authentication → URL Configuration의 Redirect URLs에 `exp://**`와
+`petapp://**`가 있어야 한다.
 
 ## 저장소에 없는 것
 

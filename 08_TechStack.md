@@ -57,7 +57,11 @@
 - `@supabase/supabase-js` — 클라이언트는 `src/supabase.js` 하나만. 세션은 AsyncStorage에 저장(웹은 localStorage), PKCE 플로우.
 - `expo-web-browser` + `expo-linking` — OAuth를 인앱 브라우저로 띄우고 돌아온 `code`를 세션으로 교환 (`src/auth.js`).
 - 환경변수: `.env`의 `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`. `EXPO_PUBLIC_*`은 번들에 포함되므로 비밀값 금지 — publishable 키는 공개용이고 실제 방어선은 RLS다.
-- 리디렉트 URI: 실제 빌드는 `petapp://auth/callback`(app.json `scheme`). **Expo Go는 커스텀 scheme을 못 써서 `exp://...`로 돌아오고 터널 주소가 매번 바뀌므로, Supabase Redirect URLs에 `exp://**` 를 등록해야 실기기 테스트가 된다.**
+- 리디렉트 URI: 실제 빌드는 `petapp://auth/callback`(app.json `scheme`). **Expo Go는 커스텀 scheme을 못 써서 `exp://...`로 돌아오고 주소가 매번 바뀌므로, Supabase Redirect URLs에 `exp://**` 를 등록해야 실기기 테스트가 된다.**
+- **Expo Go는 반드시 터널로 띄운다 — `npx expo start --tunnel`** (2026-08-03 확인). LAN 모드는 `exp://<LAN IP>:8081/--/auth/callback`을 만드는데, GoTrue가 **루프백이 아닌 IP 리터럴 호스트를 리디렉트 대상에서 거부**한다. 허용 목록에 무엇을 넣어도 안 되고, 조용히 Site URL로 떨어져 폰에서는 "사이트에 접근할 수 없습니다"로 보인다(계정은 이미 만들어진 뒤라 더 헷갈린다). 터널은 `exp://<...>.exp.direct/...` 호스트명을 주므로 `exp://**`에 걸린다.
+  - 확인 방법: `GET /auth/v1/verify?token=bogus&type=signup&redirect_to=<URI>`를 anon key로 호출해 Location을 본다. 그 URI로 돌아오면 허용된 것이고, Site URL로 가면 거부된 것이다. 토큰 검증보다 리디렉트 검증이 먼저라 로그인 없이 확인할 수 있다.
+  - 거부: `exp://121.140.187.155:8081/...`, `exp://192.168.0.5:8081/...` / 통과: `exp://x.exp.direct/...`, `exp://localhost:8081/...`, `exp://127.0.0.1:8081/...`, `exp://a.b.c.d/x`(글자 호스트는 점이 몇 개든 통과 — IP 리터럴만 걸린다)
+- Hermes에는 WebCrypto가 없어 PKCE code challenge가 `sha256` 대신 `plain`으로 떨어진다(`WebCrypto API is not supported` 경고). Supabase 토큰 엔드포인트가 `plain`을 받아 주므로 로그인은 정상 동작한다 — 로그인 실패를 이 경고 탓으로 오해하지 않는다.
 
 ## 데이터베이스
 

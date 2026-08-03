@@ -11,7 +11,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { colors } from '../theme';
 import { scaled } from '../scale';
-import { signInWith } from '../auth';
+import { signInWith, redirectTo } from '../auth';
 
 const PROVIDERS = [
   { key: 'kakao', label: '카카오로 시작하기', bg: '#FEE500', fg: '#191600' },
@@ -69,11 +69,20 @@ export default function LoginScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
 
-      {/* 링크는 아직 없다 — 이용약관·개인정보 처리방침 문서 자체가 미작성
-          (09_Todo "다음 구현 우선순위" 6). */}
-      <Text style={styles.terms}>
-        계속하면 이용약관과 개인정보 처리방침에 동의하는 것으로 봅니다
-      </Text>
+      <View>
+        {/* 개발 중에만. 이 주소가 Supabase Authentication → URL Configuration의
+            Redirect URLs에 없으면, 로그인은 성공하는데 세션이 앱으로 돌아오지
+            못하고 Site URL(기본 http://localhost:3000)로 떨어진다 — 폰에서는
+            "사이트에 접근할 수 없습니다"로 보인다. Expo Go는 호스트가 매번
+            바뀌므로 눈으로 확인할 수 있어야 한다(08_TechStack "리디렉트 URI"). */}
+        {__DEV__ ? <Text style={styles.debug}>redirect: {redirectTo}</Text> : null}
+
+        {/* 링크는 아직 없다 — 이용약관·개인정보 처리방침 문서 자체가 미작성
+            (09_Todo "다음 구현 우선순위" 6). */}
+        <Text style={styles.terms}>
+          계속하면 이용약관과 개인정보 처리방침에 동의하는 것으로 봅니다
+        </Text>
+      </View>
     </View>
   );
 }
@@ -118,5 +127,12 @@ const styles = StyleSheet.create(scaled({
     lineHeight: 16,
     color: colors.textFaint,
     textAlign: 'center',
+  },
+  debug: {
+    fontSize: 10,
+    lineHeight: 14,
+    color: colors.textGhost,
+    textAlign: 'center',
+    marginBottom: 10,
   },
 }));
