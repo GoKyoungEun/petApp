@@ -67,7 +67,8 @@ export const scheduleRepo = {
   },
 
   // 완료 처리 — 03_DB_Design "일정 완료 시" 네 단계를 모두 한다:
-  // ① 완료 기록 생성 ② 상태 완료 ③ linked_record_id로 연결 ④ 반복이면 다음 일정.
+  // ① 완료 기록 생성 ② 상태 완료 ③ scheduleId로 연결 ④ 반복이면 다음 일정.
+  // ③은 ①에서 넣는 medical_records.schedule_id다.
   //
   // `actual`은 완료 시트가 확인받은 "실제로 한 일"이다(시행일·병원·제품·메모).
   // 일정에 적힌 계획값을 그대로 복사하지 않는 이유는, 계획과 실제가 어긋나는
@@ -94,28 +95,28 @@ export const scheduleRepo = {
       memo: actual.memo ?? current.memo,
     });
 
-    await this.update(id, { status: 'completed', linkedRecordId: medical.id });
+    // 여기부터 실패하면 앞 단계만 남는다 — 일정은 예정인데 "했다"는 기록이 따로
+    // 떠 있거나, 완료는 됐는데 다음 일정이 없거나. 되감아 없던 일로 만든다.
+    // 트랜잭션이 없어서(PostgREST) 손으로 정리하는 수밖에 없다.
+    try {
+      // linked_record_id는 건드리지 않는다. 3단계의 "scheduleId로 연결"은 위에서
+      // 넣은 medical_records.schedule_id이고, linked_record_id는 그 반대 방향
+      // 포인터라 없어도 연결이 성립한다. 실제로 넣으면 서버의 외래키가 거부한다
+      // (schedules_linked_record_id_fkey) — 그 제약이 medical_records를 가리키지
+      // 않는다는 뜻이다. supabase/schema.sql의 해당 제약은 서버와 다르다.
+      await this.update(id, { status: 'completed' });
+    } catch (e) {
+      await medicalRepo.remove(medical.id).catch(() => {});
+      throw e;
+    }
 
     let nextId = null;
-    if (hasRepeat(current)) {
-      const next = await this.add({
-        petId: current.petId,
-        scheduleType: current.scheduleType,
-        customTypeName: current.customTypeName,
-        scheduledDate: addInterval(
-          current.scheduledDate,
-          current.repeatIntervalType,
-          current.repeatIntervalValue
-        ),
-        status: 'planned',
-        hospitalName: current.hospitalName,
-        productName: current.productName,
-        memo: current.memo,
-        repeatIntervalType: current.repeatIntervalType,
-        repeatIntervalValue: current.repeatIntervalValue,
-        notificationSetting: current.notificationSetting,
-      });
-      nextId = next.id;
+    try {
+      nextId = await createNext(this, current);
+    } catch (e) {
+      await this.update(id, { status: current.status }).catch(() => {});
+      await medicalRepo.remove(medical.id).catch(() => {});
+      throw e;
     }
 
     return { previousStatus: current.status, medicalId: medical.id, nextId };
@@ -125,9 +126,31 @@ export const scheduleRepo = {
     // 새로 생긴 것들을 먼저 지운다. 순서가 반대면 상태만 되돌아가고 완료 기록과
     // 다음 일정이 남는 중간 상태가 화면에 잠깐 보인다.
     if (nextId) await this.remove(nextId);
-    // 연결을 먼저 끊어야 medical_records를 지울 수 있다 — 반대로 하면
-    // linked_record_id의 외래키가 걸린다(on delete set null이 아니었다면).
-    await this.update(id, { status: previousStatus || 'planned', linkedRecordId: null });
+    await this.update(id, { status: previousStatus || 'planned' });
     if (medicalId) await medicalRepo.remove(medicalId);
   },
 };
+
+// 반복 주기가 있으면 다음 일정을 만든다(03_DB_Design "일정 완료 시" 4단계).
+// 없으면 null.
+async function createNext(repo, current) {
+  if (!hasRepeat(current)) return null;
+  const next = await repo.add({
+    petId: current.petId,
+    scheduleType: current.scheduleType,
+    customTypeName: current.customTypeName,
+    scheduledDate: addInterval(
+      current.scheduledDate,
+      current.repeatIntervalType,
+      current.repeatIntervalValue
+    ),
+    status: 'planned',
+    hospitalName: current.hospitalName,
+    productName: current.productName,
+    memo: current.memo,
+    repeatIntervalType: current.repeatIntervalType,
+    repeatIntervalValue: current.repeatIntervalValue,
+    notificationSetting: current.notificationSetting,
+  });
+  return next.id;
+}

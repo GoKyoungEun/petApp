@@ -244,7 +244,19 @@ create policy "medical records follow their pet" on public.medical_records
     where p.id = medical_records.pet_id and p.user_id = (select auth.uid())
   ));
 
--- schedules.linked_record_id의 외래키 — medical_records가 생긴 뒤라야 붙는다.
+-- schedules.linked_record_id의 외래키.
+--
+-- **서버와 다르다 (2026-08-03 확인).** 여기서는 medical_records를 가리키게 썼지만
+-- 서버의 schedules_linked_record_id_fkey는 그렇지 않다 — 방금 만든 완료 기록의
+-- id를 넣었더니 거부했다. 원본이 어느 테이블을 가리키는지는 익명 키로 볼 수
+-- 없어서 확인하지 못했다(health_records일 가능성이 높다. 03_DB_Design의
+-- HealthRecord recordType 목록에 medicalRecord가 있다).
+--
+-- 앱은 이 컬럼을 쓰지 않는다. 03_DB_Design "일정 완료 시" 3단계의 "scheduleId로
+-- 연결"은 medical_records.schedule_id이고, 이 컬럼은 그 반대 방향 포인터라
+-- 없어도 연결이 성립한다. 그래서 지금은 앱 동작에 영향이 없다.
+--
+-- 이 파일을 빈 프로젝트에 실행할 계획이라면 그때 서버 정의를 확인해 맞춘다.
 alter table public.schedules
   drop constraint if exists schedules_linked_record_id_fkey;
 alter table public.schedules

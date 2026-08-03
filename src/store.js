@@ -559,19 +559,45 @@ export function StoreProvider({ children }) {
     [petId, medicalForm, showSnack]
   );
 
-  const deleteMedical = useCallback(
+  // 완료 기록 없이 끝난 일정을 다시 할 일로 되돌린다. 완료 기록 기능 전에
+  // 완료해 둔 데이터를 정리하는 유일한 수단이다.
+  const restoreSchedule = useCallback(
     async (id) => {
       try {
+        await scheduleRepo.update(id, { status: 'planned' });
+        await invalidateSchedules(petId);
+        showToast('예정으로 되돌렸어요');
+      } catch (e) {
+        showToast(writeMessage(e, '되돌리지 못했습니다'));
+      }
+    },
+    [petId, showToast]
+  );
+
+  const deleteMedical = useCallback(
+    async (id) => {
+      const record = medicalRecords.find((m) => m.id === id);
+      try {
         await medicalRepo.remove(id);
+
+        // 일정에서 온 기록이면 그 일정을 예정으로 되돌린다. "한 적 없다"고
+        // 지운 것이니 다시 할 일로 남아야 한다. 완료 직후 4초 스낵바가 지나면
+        // 되돌릴 방법이 이것뿐이기도 하다.
+        //
+        // 반복으로 자동 생성된 다음 일정은 건드리지 않는다. 시간이 지난 뒤라
+        // 사용자가 이미 손봤을 수 있고, 조용히 지우면 되돌릴 수 없다.
+        if (record?.scheduleId) {
+          await scheduleRepo.update(record.scheduleId, { status: 'planned' });
+          await invalidateSchedules(petId);
+        }
+
         await invalidateMedical(petId);
-        // 완료 기록을 지워도 일정 상태는 그대로 둔다. 사용자가 지운 것은 "무엇을
-        // 했는지"이지 "했다는 사실"이 아니다 — 되돌리려면 일정에서 실행취소한다.
-        showToast('완료 기록을 삭제했어요');
+        showToast(record?.scheduleId ? '삭제하고 예정으로 되돌렸어요' : '완료 기록을 삭제했어요');
       } catch (e) {
         showToast(writeMessage(e, '삭제하지 못했습니다'));
       }
     },
-    [petId, showToast]
+    [petId, medicalRecords, showToast]
   );
 
   // 홈 "다음 일정" 카드 — 오늘 이후로 가장 가까운 예정 일정 하나.
@@ -652,6 +678,7 @@ export function StoreProvider({ children }) {
     closeMedicalForm,
     saveMedical,
     deleteMedical,
+    restoreSchedule,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

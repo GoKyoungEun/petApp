@@ -85,13 +85,22 @@ Expo Go(터널)로 한 바퀴 돌려 전부 정상 동작을 확인했다.
 
 중첩 스크롤(룰렛·시트 안 달력)이 폼 스크롤과 충돌하지 않는 것도 이때 확인됐다.
 
-### 아직 확인 못 한 것 (2026-08-03)
+### schema.sql이 서버와 다른 곳 (2026-08-03)
 
-`medical_records.medical_type`에 CHECK 제약이 걸려 있는지 모른다.
-`schema.sql`에는 제약을 두지 않았고(직접 입력 일정의 이름이 그대로 들어가야
-한다), 서버 원본이 어떤지는 익명 키로 볼 수 없다. 제약이 있으면 완료 처리가
-23514로 실패하고 시트 안에 메시지가 뜬다 — 일정 저장 때와 같은 방식이다.
-컬럼 이름은 이미 대조해서 통과했다(위 4번).
+`schedules.linked_record_id`의 외래키. `schema.sql`은 `medical_records`를
+가리키게 썼지만 **서버는 그렇지 않다** — 방금 만든 완료 기록의 id를 넣었더니
+`schedules_linked_record_id_fkey` 위반으로 거부했다. 어느 테이블을 가리키는지는
+익명 키로 볼 수 없어 확인하지 못했다(`health_records`일 가능성이 높다.
+03_DB_Design의 HealthRecord recordType 목록에 `medicalRecord`가 있다).
+
+앱은 이 컬럼을 쓰지 않는다. "일정 완료 시" 3단계의 "scheduleId로 연결"은
+`medical_records.schedule_id`이고 이건 반대 방향 포인터라 없어도 연결이
+성립한다. 그래서 동작에는 영향이 없다. **빈 프로젝트에 `schema.sql`을 실행할
+계획이 생기면 그때 서버 정의를 확인해 맞춘다.**
+
+`medical_records.medical_type`의 CHECK 제약은 걱정거리였는데 통과했다 —
+완료 처리가 실제로 저장되는 것을 확인했다(직접 입력 일정의 이름이 그대로
+들어가야 해서 `schema.sql`에는 제약을 두지 않았다).
 
 ## 유실 전 구현 현황 (2026-07-29 기준 — 설계 근거로 보존)
 

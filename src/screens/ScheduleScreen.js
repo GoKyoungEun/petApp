@@ -17,22 +17,46 @@ import { scheduleTitle, scheduleIcon, medicalTypeLabel, medicalTypeIcon } from '
 
 export default function ScheduleScreen() {
   const {
-    schedules, today, openScheduleForm, medicalRecords, openMedicalForm, deleteMedical,
+    schedules, today, openScheduleForm,
+    medicalRecords, openMedicalForm, deleteMedical, restoreSchedule,
   } = useStore();
 
-  const { upcoming, past } = useMemo(() => {
-    const up = [];
-    const done = [];
+  // 일정을 완료하면 "실제로 한 일"이 완료 기록으로 남는다. 완료된 일정을 따로
+  // 또 늘어놓으면 한 사건이 두 줄이 되므로, 끝난 일정은 완료 기록 쪽에서 본다.
+  const medicalBySchedule = useMemo(
+    () => new Map(medicalRecords.filter((m) => m.scheduleId).map((m) => [m.scheduleId, m])),
+    [medicalRecords]
+  );
+
+  const scheduleById = useMemo(() => new Map(schedules.map((s) => [s.id, s])), [schedules]);
+
+  // 아직 해야 할 일. 날짜가 지난 것도 여기 남는다 — 섹션을 가르는 기준은
+  // 날짜가 아니라 상태다.
+  const upcoming = useMemo(
+    () =>
+      schedules
+        .filter((s) => s.status === 'planned')
+        .sort((a, b) => (a.scheduledDate < b.scheduledDate ? -1 : 1)),
+    [schedules]
+  );
+
+  // 끝난 것들. 두 곳에서 온다:
+  //   완료 기록 — 무엇을 했는지가 남은 것
+  //   일정      — 끝났는데 기록이 없는 것. 완료 기록 기능 전에 완료해 둔
+  //               데이터다. 감추면 사라진 것처럼 보여 같은 목록에 섞어 낸다.
+  const completed = useMemo(() => {
+    const items = medicalRecords.map((m) => ({
+      key: `m:${m.id}`,
+      date: m.executedDate,
+      record: m,
+      schedule: m.scheduleId ? scheduleById.get(m.scheduleId) : null,
+    }));
     for (const s of schedules) {
-      // 완료·취소는 지난 쪽으로 내린다. 예정인데 날짜가 지난 것(놓친 일정)은
-      // 위에 남겨 둔다 — 아직 해야 할 일이라 눈에 보여야 한다.
-      if (s.status === 'planned') up.push(s);
-      else done.push(s);
+      if (s.status === 'planned' || medicalBySchedule.has(s.id)) continue;
+      items.push({ key: `s:${s.id}`, date: s.scheduledDate, record: null, schedule: s });
     }
-    up.sort((a, b) => (a.scheduledDate < b.scheduledDate ? -1 : 1));
-    done.sort((a, b) => (a.scheduledDate > b.scheduledDate ? -1 : 1));
-    return { upcoming: up, past: done };
-  }, [schedules]);
+    return items.sort((a, b) => (a.date > b.date ? -1 : 1));
+  }, [medicalRecords, schedules, scheduleById, medicalBySchedule]);
 
   return (
     <View style={styles.wrap}>
@@ -73,28 +97,22 @@ export default function ScheduleScreen() {
               </Section>
             )}
 
-            {past.length > 0 && (
-              <Section label="지난 일정">
-                {past.map((s) => (
-                  <ScheduleCard
-                    key={s.id}
-                    schedule={s}
-                    today={today}
-                    done
-                    onEdit={() => openScheduleForm(s)}
-                  />
-                ))}
-              </Section>
-            )}
           </>
         )}
 
         {/* 실제로 한 일. 일정과 도메인이 같아 여기에 둔다 — 전체 기록보기는
             health_records 기준이라 다른 테이블을 섞을 자리가 아니다. */}
-        {medicalRecords.length > 0 && (
+        {completed.length > 0 && (
           <Section label="완료 기록">
-            {medicalRecords.map((m) => (
-              <MedicalCard key={m.id} record={m} onDelete={() => deleteMedical(m.id)} />
+            {completed.map((it) => (
+              <MedicalCard
+                key={it.key}
+                record={it.record}
+                schedule={it.schedule}
+                onDelete={() =>
+                  it.record ? deleteMedical(it.record.id) : restoreSchedule(it.schedule.id)
+                }
+              />
             ))}
           </Section>
         )}
@@ -163,8 +181,12 @@ function ScheduleCard({ schedule, today, done, onEdit, onComplete }) {
   );
 }
 
-// 실제로 한 일 한 줄. 일정 카드와 달리 완료 버튼이 없고, 대신 삭제가 있다.
-function MedicalCard({ record, onDelete }) {
+// 끝난 일 한 줄.
+//
+// record가 없는 줄도 있다 — 완료 기록 기능 전에 완료해 둔 일정이다. 그때는
+// 무엇을 했는지 저장할 곳이 없어 상태만 바뀌었다. 없는 정보를 지어내지 않고
+// "기록 없음"이라고 적는다.
+function MedicalCard({ record, schedule, onDelete }) {
   const [confirm, setConfirm] = useState(false);
 
   const press = () => {
@@ -178,25 +200,40 @@ function MedicalCard({ record, onDelete }) {
     onDelete();
   };
 
+  const type = record ? record.medicalType : schedule?.scheduleType;
+  const title = record ? medicalTypeLabel(record.medicalType) : scheduleTitle(schedule);
+  const date = record ? record.executedDate : schedule.scheduledDate;
+  // 계획과 실제가 어긋난 경우에만 예정일을 덧붙인다 — 늘 보여 주면 같은 날짜가
+  // 두 번 나온다.
+  const shifted = record && schedule && schedule.scheduledDate !== record.executedDate;
+
   return (
     <View style={[styles.card, styles.medicalCard]}>
       <View style={styles.cardMain}>
         <View style={styles.cardIcon}>
-          <Icon name={medicalTypeIcon(record.medicalType)} size={20} />
+          <Icon name={record ? medicalTypeIcon(type) : scheduleIcon(schedule)} size={20} />
         </View>
         <View style={styles.cardBody}>
-          <Text style={styles.cardTitle}>{medicalTypeLabel(record.medicalType)}</Text>
+          <Text style={styles.cardTitle}>{title}</Text>
           <Text style={styles.cardDate}>
-            {formatDay(record.executedDate)}
-            {record.hospitalName ? ` · ${record.hospitalName}` : ''}
-            {record.productName ? ` · ${record.productName}` : ''}
+            {formatDay(date)}
+            {record?.hospitalName ? ` · ${record.hospitalName}` : ''}
+            {record?.productName ? ` · ${record.productName}` : ''}
+            {!record ? ' · 기록 없음' : ''}
           </Text>
-          {record.memo ? (
+          {shifted && (
+            <Text style={styles.cardShift}>예정 {formatDay(schedule.scheduledDate)}</Text>
+          )}
+          {record?.memo ? (
             <Text style={styles.cardMemo} numberOfLines={1}>{record.memo}</Text>
           ) : null}
         </View>
         <Pressable style={styles.delBtn} onPress={press} hitSlop={8}>
-          <Text style={styles.delText}>{confirm ? '한 번 더' : '삭제'}</Text>
+          {/* 어느 쪽이든 결과는 "일정이 예정으로 돌아간다"이다 — 누르기 전에
+              알 수 있어야 한다. */}
+          <Text style={styles.delText}>
+            {confirm ? (schedule ? '한 번 더 · 예정으로' : '한 번 더') : record ? '삭제' : '예정으로'}
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -261,6 +298,7 @@ const styles = StyleSheet.create(scaled({
   cardTitleDone: { color: colors.textMuted },
   cardDate: { fontSize: 12, color: colors.textMuted },
   cardMemo: { fontSize: 11, color: colors.textFaint },
+  cardShift: { fontSize: 11, color: colors.textFaint, fontWeight: '600' },
 
   dBadge: {
     backgroundColor: colors.blueChip,
