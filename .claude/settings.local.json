@@ -177,7 +177,15 @@
       "Bash(perl -0pi -e \"s/\\\\{__DEV__ \\\\? \\\\\\(\\\\n        <PhotoViewer photos=\\\\['a','b','c','d'\\\\] index=\\\\{2\\\\} onClose=\\\\{\\\\\\(\\\\\\) => \\\\{\\\\}\\\\} \\\\/>\\\\n      \\\\\\) : null\\\\}/<PhotoViewer photos={['a','b','c','d']} index={2} onClose={\\(\\) => {}} \\\\/>/\" src/screens/LoginScreen.js)",
       "Bash(cp \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/4eab5bfb-dd1c-48b6-a0ca-9553d543b353/scratchpad/LoginScreen.orig.js\" src/screens/LoginScreen.js)",
       "Bash(rm -rf dist)",
-      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('app.json','utf8'\\)\\);JSON.parse\\(require\\('fs'\\).readFileSync\\('eas.json','utf8'\\)\\);console.log\\('app.json / eas.json 유효'\\)\")"
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('app.json','utf8'\\)\\);JSON.parse\\(require\\('fs'\\).readFileSync\\('eas.json','utf8'\\)\\);console.log\\('app.json / eas.json 유효'\\)\")",
+      "Bash(EXPO_PUBLIC_SUPABASE_URL=\"\" EXPO_PUBLIC_SUPABASE_ANON_KEY=\"\" npx expo export --platform web --output-dir \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/4eab5bfb-dd1c-48b6-a0ca-9553d543b353/scratchpad/noenv\")",
+      "Bash(cp App.js \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/4eab5bfb-dd1c-48b6-a0ca-9553d543b353/scratchpad/App.orig.js\")",
+      "Bash(perl -0pi -e \"s/\\(import \\\\{ configError \\\\} from '\\\\.\\\\/src\\\\/supabase';\\)/\\\\$1\\\\nconsole.log\\('BOOT: module loaded, configError=', JSON.stringify\\(configError\\)\\);/\" App.js)",
+      "Bash(perl -0pi -e \"s/\\(function ConfigError\\\\\\(\\\\{ message \\\\}\\\\\\) \\\\{\\)/\\\\$1\\\\n  console.log\\('BOOT: ConfigError render'\\);/\" App.js)",
+      "Bash(perl -0pi -e \"s/\\(export default function App\\\\\\(\\\\\\) \\\\{\\)/\\\\$1\\\\n  console.log\\('BOOT: App render'\\);/\" App.js)",
+      "Bash(cp \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/4eab5bfb-dd1c-48b6-a0ca-9553d543b353/scratchpad/App.orig.js\" App.js)",
+      "Bash(sed -i \"s|import { View, ActivityIndicator, StyleSheet } from 'react-native';|import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';|\" App.js)",
+      "Bash(EXPO_PUBLIC_SUPABASE_URL=\"\" EXPO_PUBLIC_SUPABASE_ANON_KEY=\"\" npx expo export --platform web --clear)"
     ]
   }
 }

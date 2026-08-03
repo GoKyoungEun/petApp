@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 
@@ -10,6 +10,7 @@ import { queryClient } from './src/queryClient';
 import { usePets } from './src/queries/pets';
 import { StoreProvider, useStore } from './src/store';
 import { getSession, onAuthChange } from './src/auth';
+import { configError } from './src/supabase';
 import HomeScreen from './src/screens/HomeScreen';
 import AllRecordsScreen from './src/screens/AllRecordsScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
@@ -96,6 +97,21 @@ function Root() {
 // 로그인 게이트. 세션이 없으면 앱 본체를 마운트하지 않는다 —
 // 11_ChangeLog 2026-07-29 "로그인 필수". 모든 데이터가 RLS 뒤에 있어서
 // 세션 없이 마운트해 봐야 빈 화면에 실패한 조회만 쌓인다.
+// 서버 주소·키가 없으면 아무것도 할 수 없다. 그냥 죽지 않고 이유를 보여 준다 —
+// 첫 안드로이드 빌드가 환경변수 없이 나와 아무 화면도 뜨지 않은 적이 있다.
+function ConfigError({ message }) {
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
+  return (
+    <View style={styles.configError}>
+      <Text style={styles.configErrorTitle}>실행할 수 없어요</Text>
+      <Text style={styles.configErrorBody}>{message}</Text>
+    </View>
+  );
+}
+
 function AuthGate() {
   // undefined = 아직 확인 중. null(로그아웃)과 구분해야 앱을 켤 때마다
   // 로그인 화면이 한 번 번쩍이지 않는다.
@@ -149,7 +165,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
           <StatusBar style="dark" />
-          <AuthGate />
+          {configError ? <ConfigError message={configError} /> : <AuthGate />}
         </SafeAreaView>
       </QueryClientProvider>
     </SafeAreaProvider>
@@ -160,4 +176,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
   screen: { flex: 1, backgroundColor: '#fff' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  configError: { flex: 1, justifyContent: 'center', paddingHorizontal: 28, gap: 10 },
+  configErrorTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
+  configErrorBody: { fontSize: 13, lineHeight: 21, color: colors.textBody },
 });

@@ -131,3 +131,20 @@ npx eas-cli env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "<anon key>"
 
 기획(설계가 확정됐다)과 구현 상태(코드에 있다)를 섞어 적지 않는다. 한 번
 어긋난 적이 있어 `08_TechStack`은 문단마다 **[현재]** 표시로 구분한다.
+
+## 빌드가 이상할 때
+
+Metro가 `process.env.EXPO_PUBLIC_*`을 **번들에 값으로 박아 넣고 그 결과를
+캐시한다.** 환경변수를 바꾸고 다시 빌드해도 캐시가 살아 있으면 옛 값이 그대로
+나온다 — `Bundled 500ms`처럼 비정상적으로 빨리 끝나면 캐시를 쓴 것이다.
+
+```bash
+npx expo export --platform web --clear
+npx expo start --clear
+```
+
+값이 실제로 들어갔는지는 번들을 뒤져 보면 확실하다:
+
+```bash
+grep -c "<project-ref>" dist/_expo/static/js/web/*.js
+```
