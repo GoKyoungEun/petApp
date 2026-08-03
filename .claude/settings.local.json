@@ -116,7 +116,8 @@
       "Bash(curl -s --max-time 550 -o /dev/null -w \"status=%{http_code}\\\\n\" \"http://localhost:8082/index.bundle?platform=web&dev=true\")",
       "Bash(node -e 'const p=require\\(\"./package.json\"\\); console.log\\(\"expo-image-manipulator:\", p.dependencies[\"expo-image-manipulator\"] || \"미설치\"\\)')",
       "Bash(git switch *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(git branch *)"
     ]
   }
 }
