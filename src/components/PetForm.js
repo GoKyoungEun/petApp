@@ -19,6 +19,7 @@ import { speciesMeta, birthDateFromAge, ageYears } from '../pets';
 import { scaled } from '../scale';
 import { isValidYmd } from '../date';
 import SheetError from './SheetError';
+import DateSelect from './DateSelect';
 
 export default function PetForm() {
   const {
@@ -202,14 +203,7 @@ export default function PetForm() {
                   </Pressable>
                 </View>
               ) : (
-                <TextInput
-                  style={[styles.input, { marginTop: 8 }]}
-                  value={birthText}
-                  onChangeText={setBirthText}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={colors.textGhost}
-                  keyboardType="numbers-and-punctuation"
-                />
+                <DateSelect value={birthText} onChange={setBirthText} />
               )}
             </Field>
 
