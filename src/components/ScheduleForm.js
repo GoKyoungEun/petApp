@@ -19,7 +19,7 @@ import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
 import { scaled } from '../scale';
-import { SCHEDULE_TYPES, REPEAT_TYPES } from '../scheduleRepo';
+import { SCHEDULE_TYPES, REPEAT_TYPES } from '../schedules';
 import SheetError from './SheetError';
 import DateField from './DateField';
 
@@ -29,7 +29,9 @@ export default function ScheduleForm() {
     saveSchedule, deleteSchedule, today, writeError,
   } = useStore();
 
-  const isEdit = !!editingSchedule;
+  // id가 있어야 수정이다. "기록 먼저 생성 → 다음 일정 등록"은 종류·병원·제품만
+  // 채운 id 없는 객체를 넘기므로, 값은 채워지되 새 일정으로 열려야 한다.
+  const isEdit = !!editingSchedule?.id;
 
   const [type, setType] = useState('vaccination');
   const [customName, setCustomName] = useState('');

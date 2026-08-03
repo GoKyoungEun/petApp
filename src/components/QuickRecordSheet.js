@@ -330,7 +330,7 @@ function MemoSheet({ onClose, onBack, addRecord }) {
 }
 
 function MoreSheet({ openSheet, closeSheet }) {
-  const { species } = useStore();
+  const { species, openMedicalForm } = useStore();
   const items = [
     { key: 'vomit', icon: 'vomit', label: '구토' },
     species === 'cat'
@@ -339,6 +339,9 @@ function MoreSheet({ openSheet, closeSheet }) {
     { key: 'weight', icon: 'weight', label: '몸무게' },
     { key: 'photo', icon: 'healthPhoto', label: '건강사진' },
     { key: 'memo', icon: 'memo', label: '메모' },
+    // 다른 항목과 달리 health_records가 아니라 medical_records로 간다
+    // (03_DB_Design "일정과 기록의 관계") — 그래서 시트도 따로다.
+    { key: 'medical', icon: 'hospital', label: '병원 기록', medical: true },
   ];
   // Fixed three per row. Laying this out with a percentage width plus a gap
   // overflowed by a pixel or two and silently dropped to two columns, and the
@@ -355,7 +358,11 @@ function MoreSheet({ openSheet, closeSheet }) {
           <View key={ri} style={styles.moreRow}>
             {row.map((it) => (
               <Pressable key={it.key} style={styles.moreCell}
-                onPress={() => openSheet(it.key, true)}>
+                onPress={() => {
+                  if (!it.medical) return openSheet(it.key, true);
+                  closeSheet();
+                  openMedicalForm({ mode: 'standalone' });
+                }}>
                 <Icon name={it.icon} size={22} color={colors.primary} />
                 <Text style={styles.moreLabel}>{it.label}</Text>
               </Pressable>

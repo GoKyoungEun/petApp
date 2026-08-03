@@ -6,17 +6,19 @@
 // 완료 처리는 여기서 한 번에 한다. 반복 주기가 있으면 다음 일정이 함께 생기고,
 // 4초 안에 실행취소하면 상태와 자동 생성분이 같이 되돌아간다(store.js).
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
 import { scaled } from '../scale';
 import { formatDay, daysUntil } from '../date';
-import { scheduleTitle, scheduleIcon } from '../scheduleRepo';
+import { scheduleTitle, scheduleIcon, medicalTypeLabel, medicalTypeIcon } from '../schedules';
 
 export default function ScheduleScreen() {
-  const { schedules, today, openScheduleForm, completeSchedule } = useStore();
+  const {
+    schedules, today, openScheduleForm, medicalRecords, openMedicalForm, deleteMedical,
+  } = useStore();
 
   const { upcoming, past } = useMemo(() => {
     const up = [];
@@ -46,7 +48,9 @@ export default function ScheduleScreen() {
         style={styles.body}
         contentContainerStyle={{ paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}>
-        {schedules.length === 0 ? (
+        {/* 완료 기록만 있고 일정이 없는 계정도 있다(더보기 → 병원 기록으로
+            바로 남긴 경우) — 둘 다 비었을 때만 빈 상태를 낸다. */}
+        {schedules.length === 0 && medicalRecords.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>등록된 일정이 없어요</Text>
             <Text style={styles.emptySub}>예방접종·심장사상충 같은 일정을 미리 등록해 두세요</Text>
@@ -61,7 +65,9 @@ export default function ScheduleScreen() {
                     schedule={s}
                     today={today}
                     onEdit={() => openScheduleForm(s)}
-                    onComplete={() => completeSchedule(s)}
+                    // 바로 완료하지 않고 시트에서 실제 내용을 확인받는다 —
+                    // 계획과 실제가 어긋나는 것이 완료 기록을 따로 두는 이유다.
+                    onComplete={() => openMedicalForm({ mode: 'complete', schedule: s })}
                   />
                 ))}
               </Section>
@@ -81,6 +87,16 @@ export default function ScheduleScreen() {
               </Section>
             )}
           </>
+        )}
+
+        {/* 실제로 한 일. 일정과 도메인이 같아 여기에 둔다 — 전체 기록보기는
+            health_records 기준이라 다른 테이블을 섞을 자리가 아니다. */}
+        {medicalRecords.length > 0 && (
+          <Section label="완료 기록">
+            {medicalRecords.map((m) => (
+              <MedicalCard key={m.id} record={m} onDelete={() => deleteMedical(m.id)} />
+            ))}
+          </Section>
         )}
       </ScrollView>
     </View>
@@ -147,6 +163,46 @@ function ScheduleCard({ schedule, today, done, onEdit, onComplete }) {
   );
 }
 
+// 실제로 한 일 한 줄. 일정 카드와 달리 완료 버튼이 없고, 대신 삭제가 있다.
+function MedicalCard({ record, onDelete }) {
+  const [confirm, setConfirm] = useState(false);
+
+  const press = () => {
+    // 다른 삭제와 같은 두 번 누르기 확인. 목록에서 바로 지우는 동작이라
+    // 시트를 띄우면 과하고, 한 번에 지우면 오탭이 위험하다.
+    if (!confirm) {
+      setConfirm(true);
+      return;
+    }
+    setConfirm(false);
+    onDelete();
+  };
+
+  return (
+    <View style={[styles.card, styles.medicalCard]}>
+      <View style={styles.cardMain}>
+        <View style={styles.cardIcon}>
+          <Icon name={medicalTypeIcon(record.medicalType)} size={20} />
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={styles.cardTitle}>{medicalTypeLabel(record.medicalType)}</Text>
+          <Text style={styles.cardDate}>
+            {formatDay(record.executedDate)}
+            {record.hospitalName ? ` · ${record.hospitalName}` : ''}
+            {record.productName ? ` · ${record.productName}` : ''}
+          </Text>
+          {record.memo ? (
+            <Text style={styles.cardMemo} numberOfLines={1}>{record.memo}</Text>
+          ) : null}
+        </View>
+        <Pressable style={styles.delBtn} onPress={press} hitSlop={8}>
+          <Text style={styles.delText}>{confirm ? '한 번 더' : '삭제'}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create(scaled({
   wrap: { flex: 1 },
   head: {
@@ -182,6 +238,9 @@ const styles = StyleSheet.create(scaled({
     overflow: 'hidden',
   },
   cardDone: { backgroundColor: colors.surfaceMuted },
+  medicalCard: { borderColor: colors.goodBorder, backgroundColor: colors.goodBg },
+  delBtn: { paddingVertical: 6, paddingHorizontal: 8 },
+  delText: { fontSize: 11, fontWeight: '700', color: colors.textMuted },
   cardMain: {
     flexDirection: 'row',
     alignItems: 'center',

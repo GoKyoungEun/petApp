@@ -6,7 +6,7 @@ import { useStore } from '../store';
 import { fetchRecordsByDate } from '../queries/records';
 import { speciesMeta } from '../pets';
 import { addDays, formatHeader, daysUntil } from '../date';
-import { scheduleTitle, scheduleIcon } from '../scheduleRepo';
+import { scheduleTitle, scheduleIcon } from '../schedules';
 import { scaled } from '../scale';
 
 // 강아지 = 산책 / 고양이 = 컨디션 (02_MVP_Requirement §3)

@@ -5,7 +5,7 @@ import { colors } from '../theme';
 import { useStore, summarizeDay } from '../store';
 import { useRecordDates, useRecordsByDate } from '../queries/records';
 import { WEEKDAYS, formatDay, parseYmd, ymd, monthRows, weekRows } from '../date';
-import { scheduleTitle, scheduleIcon } from '../scheduleRepo';
+import { scheduleTitle, scheduleIcon } from '../schedules';
 import { scaled } from '../scale';
 
 export default function CalendarScreen() {

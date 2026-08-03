@@ -79,6 +79,22 @@ export const scheduleMapper = makeMapper({
   updatedAt: 'updated_at',
 }, { readonly: ['petId'] });
 
+// 03_DB_Design "MedicalRecord" — 실제로 완료한 건강관리·병원 방문.
+// scheduleId는 어느 일정을 완료해서 생긴 기록인지 가리킨다. 일정 없이 기록만
+// 먼저 만들 수도 있어 null이 허용된다("사용자가 기록을 먼저 생성한 경우").
+export const medicalMapper = makeMapper({
+  id: 'id',
+  petId: 'pet_id',
+  scheduleId: 'schedule_id',
+  medicalType: 'medical_type',
+  executedDate: 'executed_date',
+  hospitalName: 'hospital_name',
+  productName: 'product_name',
+  memo: 'memo',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+}, { readonly: ['petId'] });
+
 // 03_DB_Design "HealthRecord". petId는 기록을 만든 뒤 다른 펫으로 옮기는 UI가
 // 없어서 patch 대상이 아니다.
 export const recordMapper = makeMapper({

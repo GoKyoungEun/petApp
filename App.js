@@ -24,6 +24,7 @@ import Snackbar from './src/components/Snackbar';
 import PetMenu from './src/components/PetMenu';
 import PetForm from './src/components/PetForm';
 import ScheduleForm from './src/components/ScheduleForm';
+import MedicalForm from './src/components/MedicalForm';
 import EditRecordSheet from './src/components/EditRecordSheet';
 import HealthPhotoSheet from './src/components/HealthPhotoSheet';
 
@@ -83,6 +84,7 @@ function Root() {
       <PetMenu />
       <PetForm />
       <ScheduleForm />
+      <MedicalForm />
       <EditRecordSheet />
     </>
   );

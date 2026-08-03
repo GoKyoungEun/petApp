@@ -11,10 +11,12 @@ import { AppState } from 'react-native';
 import { recordRepo } from './repository';
 import { petRepo } from './petRepo';
 import { scheduleRepo } from './scheduleRepo';
+import { medicalRepo } from './medicalRepo';
 import { todayYmd } from './date';
 import { useRecordsByDate, invalidateRecords } from './queries/records';
 import { usePets, invalidatePets } from './queries/pets';
 import { useSchedules, invalidateSchedules } from './queries/schedules';
+import { useMedicalRecords, invalidateMedical } from './queries/medical';
 
 const StoreContext = createContext(null);
 
@@ -456,7 +458,9 @@ export function StoreProvider({ children }) {
     async (data) => {
       try {
         setWriteError(null);
-        if (editingSchedule) await scheduleRepo.update(editingSchedule.id, data);
+        // id가 있어야 수정이다. "다음 일정도 등록하시겠어요"는 값만 채운
+        // id 없는 객체를 넘기므로 새 일정으로 가야 한다.
+        if (editingSchedule?.id) await scheduleRepo.update(editingSchedule.id, data);
         else await scheduleRepo.add({ ...data, petId, status: 'planned' });
         await invalidateSchedules(petId);
         closeScheduleForm();
@@ -482,27 +486,92 @@ export function StoreProvider({ children }) {
     [petId, closeScheduleForm, showToast]
   );
 
-  const completeSchedule = useCallback(
-    async (schedule) => {
+  // --- 완료 기록 (MedicalRecord) ----------------------------------------
+  //
+  // 03_DB_Design "일정과 기록의 관계". 두 갈래로 만들어진다:
+  //   일정 완료  — 일정 탭의 "완료 처리" → 시트에서 실제 내용 확인 → 연결까지
+  //   기록 먼저  — 더보기 → 병원 기록 → 저장 후 "다음 일정도 등록하시겠어요"
+
+  const { data: medicalRecords = [] } = useMedicalRecords(petId);
+
+  // null | { mode: 'complete', schedule } | { mode: 'standalone' }
+  const [medicalForm, setMedicalForm] = useState(null);
+
+  const openMedicalForm = useCallback((form) => {
+    setWriteError(null);
+    setMedicalForm(form);
+  }, []);
+
+  const closeMedicalForm = useCallback(() => {
+    setMedicalForm(null);
+    setWriteError(null);
+  }, []);
+
+  // 두 갈래가 저장하는 곳이 달라서 여기서 가른다. 성공하면 true를 준다 —
+  // 시트가 "다음 일정" 단계로 넘어갈지 판단해야 하기 때문이다.
+  const saveMedical = useCallback(
+    async (data) => {
+      const form = medicalForm;
+      if (!form) return false;
       try {
-        const result = await scheduleRepo.complete(schedule.id);
-        await invalidateSchedules(petId);
-        if (!result) return;
-        // 반복 주기가 있으면 다음 일정이 함께 생겼다. 되돌릴 때는 상태 복원과
-        // 그 일정 삭제를 같이 해야 한다 — 하나만 하면 어긋난 상태가 남는다.
-        showSnack(
-          result.nextId ? '완료했어요 · 다음 일정을 만들었어요' : '완료했어요',
-          async () => {
-            await scheduleRepo.uncomplete(schedule.id, result.previousStatus, result.nextId);
-            await invalidateSchedules(petId);
+        setWriteError(null);
+
+        if (form.mode === 'complete') {
+          const result = await scheduleRepo.complete(form.schedule.id, data);
+          await invalidateSchedules(petId);
+          await invalidateMedical(petId);
+          if (result) {
+            // 되돌릴 것이 셋이다: 상태, 이번에 만든 완료 기록, 반복으로 생긴
+            // 다음 일정. 하나만 되돌리면 어긋난 상태가 남는다.
+            showSnack(
+              result.nextId ? '완료했어요 · 다음 일정을 만들었어요' : '완료했어요',
+              async () => {
+                await scheduleRepo.uncomplete(form.schedule.id, result);
+                await invalidateSchedules(petId);
+                await invalidateMedical(petId);
+              }
+            );
           }
-        );
+        } else {
+          await medicalRepo.add({
+            petId,
+            scheduleId: null,
+            medicalType:
+              data.scheduleType === 'custom'
+                ? data.customTypeName || 'custom'
+                : data.scheduleType,
+            executedDate: data.executedDate,
+            hospitalName: data.hospitalName,
+            productName: data.productName,
+            memo: data.memo,
+          });
+          await invalidateMedical(petId);
+          // 실행취소는 걸지 않는다 — 바로 뒤에 "다음 일정도 등록할까요"가
+          // 뜨는데 그 위에 스낵바를 겹쳐 두면 무엇을 취소하는지 모호해진다.
+          // 삭제는 완료 기록 목록에서 할 수 있다.
+        }
+        return true;
       } catch (e) {
-        // 시트가 아니라 목록에서 누르는 동작이라 토스트가 보인다.
-        showToast(writeMessage(e, '완료 처리하지 못했습니다'));
+        setWriteError(writeMessage(e, '저장하지 못했습니다'));
+        return false;
       }
     },
-    [petId, showSnack, showToast]
+    [petId, medicalForm, showSnack]
+  );
+
+  const deleteMedical = useCallback(
+    async (id) => {
+      try {
+        await medicalRepo.remove(id);
+        await invalidateMedical(petId);
+        // 완료 기록을 지워도 일정 상태는 그대로 둔다. 사용자가 지운 것은 "무엇을
+        // 했는지"이지 "했다는 사실"이 아니다 — 되돌리려면 일정에서 실행취소한다.
+        showToast('완료 기록을 삭제했어요');
+      } catch (e) {
+        showToast(writeMessage(e, '삭제하지 못했습니다'));
+      }
+    },
+    [petId, showToast]
   );
 
   // 홈 "다음 일정" 카드 — 오늘 이후로 가장 가까운 예정 일정 하나.
@@ -577,7 +646,12 @@ export function StoreProvider({ children }) {
     closeScheduleForm,
     saveSchedule,
     deleteSchedule,
-    completeSchedule,
+    medicalRecords,
+    medicalForm,
+    openMedicalForm,
+    closeMedicalForm,
+    saveMedical,
+    deleteMedical,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
