@@ -117,7 +117,8 @@
       "Bash(node -e 'const p=require\\(\"./package.json\"\\); console.log\\(\"expo-image-manipulator:\", p.dependencies[\"expo-image-manipulator\"] || \"미설치\"\\)')",
       "Bash(git switch *)",
       "Bash(git merge *)",
-      "Bash(git branch *)"
+      "Bash(git branch *)",
+      "PowerShell($zip=\"C:\\\\Users\\\\cjddu\\\\Desktop\\\\petApp-icon-src.zip\"; Add-Type -AssemblyName System.IO.Compression.FileSystem; $a=[System.IO.Compression.ZipFile]::OpenRead\\($zip\\); \"압축 안 파일 수: $\\($a.Entries.Count\\)\"; \"샘플: \" + \\(\\($a.Entries | Select-Object -First 3 -ExpandProperty Name\\) -join ', '\\); $a.Dispose\\(\\))"
     ]
   }
 }
