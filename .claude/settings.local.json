@@ -124,7 +124,16 @@
       "Bash(git checkout *)",
       "Bash(EXPO_PUBLIC_SUPABASE_URL=\"https://example.supabase.co\" EXPO_PUBLIC_SUPABASE_ANON_KEY=\"dummy-anon-key\" npx expo export --platform web --output-dir \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/57df2845-29cf-4a9e-9008-f5b2b3240151/scratchpad/webexport\")",
       "Bash(EXPO_PUBLIC_SUPABASE_URL=\"https://example.supabase.co\" EXPO_PUBLIC_SUPABASE_ANON_KEY=\"dummy-anon-key\" npx expo export --platform web)",
-      "Bash(EXPO_PUBLIC_SUPABASE_URL=\"https://example.supabase.co\" EXPO_PUBLIC_SUPABASE_ANON_KEY=\"dummy\" npx expo export --platform web --output-dir \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/57df2845-29cf-4a9e-9008-f5b2b3240151/scratchpad/webexport2\")"
+      "Bash(EXPO_PUBLIC_SUPABASE_URL=\"https://example.supabase.co\" EXPO_PUBLIC_SUPABASE_ANON_KEY=\"dummy\" npx expo export --platform web --output-dir \"C:/Users/admin/AppData/Local/Temp/claude/C--Users-admin-Desktop-go-petApp/57df2845-29cf-4a9e-9008-f5b2b3240151/scratchpad/webexport2\")",
+      "Bash(gh auth *)",
+      "Bash(cd \"C:/Users/admin/Desktop/go/petApp\")",
+      "Bash(echo \"-- negative control \\(없는 컬럼\\) --\")",
+      "Bash(curl -s '__TRACKED_VAR__/rest/v1/pets?select=id,nope_not_a_column&limit=1' -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__')",
+      "Bash(echo)",
+      "Bash(curl -s https://obuzyfpnvxbuuraqfphy.supabase.co/auth/v1/settings -H 'apikey: sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw')",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(s\\);const on=Object.entries\\(j.external||{}\\).filter\\(\\([,v]\\)=>v\\).map\\(\\([k]\\)=>k\\);console.log\\('사용 가능:',on.join\\(', '\\)\\);console.log\\('구글:',j.external?.google,'/ 카카오:',j.external?.kakao\\);}\\)\")",
+      "Bash(node -e \"const os=require\\('os'\\);const n=os.networkInterfaces\\(\\);for\\(const [k,v] of Object.entries\\(n\\)\\) for\\(const i of v||[]\\) if\\(i.family==='IPv4'&&!i.internal\\) console.log\\(k,'→',i.address\\)\")",
+      "Bash(git check-ignore *)"
     ]
   }
 }
