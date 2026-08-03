@@ -53,7 +53,7 @@ const STOOL_COLOR = {
 };
 
 export default function StatsScreen() {
-  const { petId, today, pet, openRecords } = useStore();
+  const { petId, today, pet, setTab } = useStore();
 
   const [period, setPeriod] = useState('30d');
   const [weightPeriod, setWeightPeriod] = useState('3m');
@@ -254,8 +254,9 @@ export default function StatsScreen() {
                   <Sparkline points={weight.points} width={cardWidth} />
                 )}
 
-                <Pressable style={styles.moreLink} onPress={() => openRecords('weight')}>
-                  <Text style={styles.moreLinkText}>측정 기록 보기</Text>
+                {/* 큰 그래프·눈금·측정 로그는 전용 화면에서 (02_MVP §7). */}
+                <Pressable style={styles.moreLink} onPress={() => setTab('weight')}>
+                  <Text style={styles.moreLinkText}>자세히</Text>
                   <Icon name="chevron-right" size={13} color={colors.textMuted} />
                 </Pressable>
               </>

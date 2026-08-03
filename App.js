@@ -13,6 +13,7 @@ import AllRecordsScreen from './src/screens/AllRecordsScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import ScheduleScreen from './src/screens/ScheduleScreen';
 import StatsScreen from './src/screens/StatsScreen';
+import WeightScreen from './src/screens/WeightScreen';
 import MyScreen from './src/screens/MyScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import BottomNav from './src/components/BottomNav';
@@ -39,6 +40,8 @@ function Root() {
           <ScheduleScreen />
         ) : tab === 'stats' ? (
           <StatsScreen />
+        ) : tab === 'weight' ? (
+          <WeightScreen />
         ) : (
           <MyScreen />
         )}
