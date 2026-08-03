@@ -20,6 +20,7 @@ import { formatDot } from '../date';
 import { MAX_PHOTOS } from '../repository';
 import { pickRecordPhotos } from '../photo';
 import SheetError from './SheetError';
+import DateField from './DateField';
 
 const SYMPTOM_OPTS = [
   '식욕 저하', '기운 없음', '구토', '설사', '기침',
@@ -35,6 +36,7 @@ export default function QuickRecordSheet() {
     condStage, setCondStage,
     walkMin, setWalkMin, weightVal, setWeightVal,
     symptoms, toggleSymptom, writeError,
+    sheetDate, // 몸무게 시트의 "측정일" 표시용 — 날짜 입력 자체는 SheetHeader가 맡는다
   } = useStore();
 
   // Two-step state for attach-capable sheets.
@@ -283,7 +285,9 @@ export default function QuickRecordSheet() {
                   onMinus={() => setWeightVal(Math.round((weightVal - 0.1) * 10) / 10)}
                   onPlus={() => setWeightVal(Math.round((weightVal + 0.1) * 10) / 10)}
                 />
-                <Text style={styles.hintCenter}>측정일 · {formatDot(today)}</Text>
+                {/* 아래 날짜 필드를 따라간다 — 고정으로 오늘을 찍으면 날짜를
+                    바꿨을 때 둘이 어긋난다. */}
+                <Text style={styles.hintCenter}>측정일 · {formatDot(sheetDate)}</Text>
                 <PrimaryBtn label="저장"
                   onPress={() => addRecord({ recordType: 'weight', data: { kg: weightVal } }, '몸무게 기록되었습니다')} />
               </>
@@ -345,7 +349,7 @@ function MoreSheet({ openSheet, closeSheet }) {
 
   return (
     <>
-      <SheetHeader title="더보기" onClose={closeSheet} />
+      <SheetHeader title="더보기" onClose={closeSheet} noDate />
       <View style={styles.moreGrid}>
         {rows.map((row, ri) => (
           <View key={ri} style={styles.moreRow}>
@@ -367,21 +371,32 @@ function MoreSheet({ openSheet, closeSheet }) {
   );
 }
 
-function SheetHeader({ title, onClose, onBack, small }) {
+// 제목 줄 바로 아래에 기록 날짜를 함께 낸다. 저장하는 시트는 분기마다 갈리지만
+// 헤더는 전부 이걸 쓰므로, 여기 한 곳에 두면 어느 시트를 열든 날짜가 같은
+// 자리(제목 아래, 선택지 위)에 온다.
+//
+// noDate: '더보기'는 메뉴라 저장하지 않는다 — 날짜를 물을 일이 없다.
+function SheetHeader({ title, onClose, onBack, small, noDate }) {
+  const { today, sheetDate, setSheetDate } = useStore();
   return (
-    <View style={styles.header}>
-      <View style={styles.headerLeft}>
-        {onBack && (
-          <Pressable onPress={onBack} hitSlop={8}>
-            <Icon name="arrow-left" size={17} color="#6B6259" />
-          </Pressable>
-        )}
-        <Text style={[styles.headerTitle, small && { fontSize: 14 }]}>{title}</Text>
+    <>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          {onBack && (
+            <Pressable onPress={onBack} hitSlop={8}>
+              <Icon name="arrow-left" size={17} color="#6B6259" />
+            </Pressable>
+          )}
+          <Text style={[styles.headerTitle, small && { fontSize: 14 }]}>{title}</Text>
+        </View>
+        <Pressable onPress={onClose} hitSlop={8}>
+          <Icon name="x" size={18} color={colors.textMuted} />
+        </Pressable>
       </View>
-      <Pressable onPress={onClose} hitSlop={8}>
-        <Icon name="x" size={18} color={colors.textMuted} />
-      </Pressable>
-    </View>
+      {!noDate && (
+        <DateField value={sheetDate} today={today} onChange={setSheetDate} />
+      )}
+    </>
   );
 }
 

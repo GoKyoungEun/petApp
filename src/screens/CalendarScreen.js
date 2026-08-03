@@ -4,40 +4,11 @@ import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore, summarizeDay } from '../store';
 import { useRecordDates, useRecordsByDate } from '../queries/records';
-import { WEEKDAYS, formatDay, parseYmd, toYmd } from '../date';
+import { WEEKDAYS, formatDay, parseYmd, ymd, monthRows, weekRows } from '../date';
 import { scaled } from '../scale';
 
-const ymd = (y, m, d) => toYmd(new Date(y, m, d)); // m is 0-indexed
-
-// Grids hold date strings, not day numbers: a week view can straddle two months
-// ("11월 30일 · 12월 1일" in one row), which a bare day number can't express.
-// null is a leading/trailing blank in the month grid.
-
-function monthRows(year, month) {
-  const first = new Date(year, month, 1).getDay();
-  const total = new Date(year, month + 1, 0).getDate();
-  const cells = [];
-  for (let i = 0; i < first; i++) cells.push(null);
-  for (let d = 1; d <= total; d++) cells.push(ymd(year, month, d));
-  while (cells.length % 7 !== 0) cells.push(null);
-  const rows = [];
-  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
-  return rows;
-}
-
-// The Sunday-to-Saturday week holding `dateStr` — one row, never blank.
-function weekRows(dateStr) {
-  const d = parseYmd(dateStr);
-  const sunday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay());
-  return [
-    Array.from({ length: 7 }, (_, i) =>
-      ymd(sunday.getFullYear(), sunday.getMonth(), sunday.getDate() + i)
-    ),
-  ];
-}
-
 export default function CalendarScreen() {
-  const { petId, today, setTab, openRecords } = useStore();
+  const { petId, today, setTab, openRecords, openSheet } = useStore();
 
   // Opens on the current month with today selected; the user's later navigation
   // is theirs to keep, so a midnight rollover must not yank the view back.
@@ -201,7 +172,9 @@ export default function CalendarScreen() {
         ) : (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>이날은 아직 기록이 없어요</Text>
-            <Pressable style={styles.emptyBtn} onPress={() => setTab('home')}>
+            {/* 06_UserFlow "캘린더 → 날짜 선택 → 기록 추가". 홈으로 보내면
+                고른 날짜를 잃고 오늘에 쌓이므로, 더보기 시트를 이 날짜로 연다. */}
+            <Pressable style={styles.emptyBtn} onPress={() => openSheet('more', false, selected)}>
               <Icon name="plus" size={15} color={colors.accentText} />
               <Text style={styles.emptyBtnText}>기록 추가</Text>
             </Pressable>

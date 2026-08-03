@@ -288,19 +288,29 @@ export function StoreProvider({ children }) {
     [clearSnackTimer]
   );
 
-  const openSheet = useCallback((name, fromMore = false) => {
+  // Which day the open sheet writes to. Always reopens on today, so the quick
+  // path costs no extra taps; the sheet's 기록 날짜 field moves it when the user
+  // is filling in something they forgot yesterday.
+  const [sheetDate, setSheetDate] = useState(today);
+
+  const openSheet = useCallback((name, fromMore = false, date) => {
     if (name === 'walk') setWalkMin(20);
     setCondStage('main');
     setSheetFromMore(fromMore);
     setWriteError(null);
+    // 더보기 → 개별 기록으로 넘어갈 때도 이 함수를 거친다. 이미 시트가 열려
+    // 있으면 그때 고른 날짜를 유지해야 한다 — 아니면 캘린더에서 넘어온 날짜가
+    // 한 칸 건너뛰는 사이에 오늘로 되돌아간다.
+    setSheetDate((cur) => date ?? (sheet ? cur : today));
     setSheet(name);
-  }, []);
+  }, [sheet, today]);
 
   const closeSheet = useCallback(() => {
     setSheet(null);
     setCondStage('main');
     setWriteError(null);
-  }, []);
+    setSheetDate(today);
+  }, [today]);
 
   // Create one or more event records, then surface the snackbar. The ids are
   // tracked so undo can remove exactly this batch (a single tap, or the whole
@@ -313,7 +323,9 @@ export function StoreProvider({ children }) {
         for (const e of entries) {
           const rec = await recordRepo.add({
             petId,
-            recordDate: today,
+            // 항목별로 날짜를 다르게 줄 일은 없다. "오늘도 평소와 같아요"처럼
+            // 시트 없이 부르는 쪽은 today를 직접 넘긴다.
+            recordDate: e.recordDate ?? sheetDate,
             recordType: e.recordType,
             data: e.data || {},
             memo: e.memo ?? null,
@@ -333,9 +345,10 @@ export function StoreProvider({ children }) {
       await invalidateRecords(petId);
       setSheet(null);
       setCondStage('main');
+      setSheetDate(today); // 다음에 여는 시트는 다시 오늘부터
       showSnack(msg);
     },
-    [petId, today, showSnack]
+    [petId, today, sheetDate, showSnack]
   );
 
   const addRecord = useCallback((entry, msg) => addRecords([entry], msg), [addRecords]);
@@ -430,6 +443,8 @@ export function StoreProvider({ children }) {
     sheetFromMore,
     openSheet,
     closeSheet,
+    sheetDate,
+    setSheetDate,
     condStage,
     setCondStage,
     walkMin,

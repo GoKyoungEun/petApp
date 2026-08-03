@@ -31,6 +31,37 @@ export function addDays(str, n) {
   return toYmd(d);
 }
 
+// (year, 0-indexed month, day) -> 'YYYY-MM-DD'. Out-of-range days roll over the
+// way Date does, which is what the grid builders below rely on.
+export const ymd = (y, m, d) => toYmd(new Date(y, m, d));
+
+// A month laid out as 6 rows of 7, holding date strings (null = leading or
+// trailing blank). Rows hold dates rather than day numbers because a week can
+// straddle two months, which a bare number can't express — the calendar's week
+// view and the record-date picker both need that.
+export function monthRows(year, month) {
+  const first = new Date(year, month, 1).getDay();
+  const total = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < first; i++) cells.push(null);
+  for (let d = 1; d <= total; d++) cells.push(ymd(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  const rows = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+  return rows;
+}
+
+// The Sunday-to-Saturday week holding `dateStr` — one row, never blank.
+export function weekRows(dateStr) {
+  const d = parseYmd(dateStr);
+  const sunday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay());
+  return [
+    Array.from({ length: 7 }, (_, i) =>
+      ymd(sunday.getFullYear(), sunday.getMonth(), sunday.getDate() + i)
+    ),
+  ];
+}
+
 // Home header: "7월 22일 수"
 export function formatHeader(str) {
   const d = parseYmd(str);

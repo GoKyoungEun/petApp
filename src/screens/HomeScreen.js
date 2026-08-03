@@ -43,7 +43,9 @@ export default function HomeScreen() {
       .filter((r) => types.includes(r.recordType))
       .map((r) => {
         const { photos, ...data } = r.data || {}; // don't duplicate photos
-        return { recordType: r.recordType, data };
+        // 이 버튼은 시트를 거치지 않으므로 날짜를 직접 준다 — 어제를 오늘로
+        // 복사하는 기능이라 언제나 오늘이다(store.js addRecords).
+        return { recordType: r.recordType, data, recordDate: today };
       });
     if (copy.length === 0) {
       showToast('어제 기록이 없어 불러올 수 없어요');

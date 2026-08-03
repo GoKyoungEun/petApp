@@ -28,11 +28,15 @@ import { scaled } from '../scale';
 import { MAX_PHOTOS } from '../repository';
 import { pickRecordPhotos, captureRecordPhoto } from '../photo';
 import SheetError from './SheetError';
+import DateField from './DateField';
 
 export const PHOTO_CATEGORIES = ['눈', '코', '발', '피부 및 모질', '기타'];
 
 export default function HealthPhotoSheet() {
-  const { sheet, closeSheet, openSheet, sheetFromMore, addRecord, writeError } = useStore();
+  const {
+    sheet, closeSheet, openSheet, sheetFromMore, addRecord, writeError,
+    today, sheetDate, setSheetDate,
+  } = useStore();
 
   const visible = sheet === 'photo';
 
@@ -102,6 +106,9 @@ export default function HealthPhotoSheet() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.body}
             keyboardShouldPersistTaps="handled">
+
+            {/* 제목 아래, 내용 위 — QuickRecordSheet의 SheetHeader와 같은 자리. */}
+            <DateField value={sheetDate} today={today} onChange={setSheetDate} />
 
             <Text style={styles.label}>사진 {photos.length}/{MAX_PHOTOS}</Text>
             <View style={styles.grid}>
