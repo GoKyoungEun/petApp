@@ -10,9 +10,11 @@ import React, {
 import { AppState } from 'react-native';
 import { recordRepo } from './repository';
 import { petRepo } from './petRepo';
+import { scheduleRepo } from './scheduleRepo';
 import { todayYmd } from './date';
 import { useRecordsByDate, invalidateRecords } from './queries/records';
 import { usePets, invalidatePets } from './queries/pets';
+import { useSchedules, invalidateSchedules } from './queries/schedules';
 
 const StoreContext = createContext(null);
 
@@ -76,6 +78,14 @@ export function summarizeDay(records) {
   }));
 }
 
+// Writes fail for reasons the user can act on (offline) and reasons they can't
+// (RLS, a bad column). Lead with what didn't happen, then append the underlying
+// message — without it a failed save is indistinguishable from a frozen button.
+function writeMessage(e, fallback) {
+  const detail = typeof e?.message === 'string' ? e.message.trim() : '';
+  return detail ? `${fallback}\n${detail}` : fallback;
+}
+
 export function StoreProvider({ children }) {
   const [tab, setTab] = useState('home');
 
@@ -104,13 +114,19 @@ export function StoreProvider({ children }) {
     };
   }, [today]);
 
-  // Pets come from the query cache (seeds 코코·보리 on first run); which one is
-  // selected is UI state and stays here.
-  const { data: pets = [] } = usePets();
+  // Pets come from the query cache; which one is selected is UI state and stays
+  // here. A new account starts with an empty list — there is no seed data.
+  const { data: pets = [], isSuccess: petsLoaded } = usePets();
   const [currentPetId, setCurrentPetId] = useState(null);
   const [showPetMenu, setShowPetMenu] = useState(false);
   const [showPetForm, setShowPetForm] = useState(false);
   const [editingPetId, setEditingPetId] = useState(null); // null = create mode
+
+  // A write that failed (network, RLS, storage). Snackbars and toasts can't
+  // render above a Modal, so a sheet that fails while open shows this inline
+  // instead (08_TechStack "실패 처리").
+  const [writeError, setWriteError] = useState(null);
+  const clearWriteError = useCallback(() => setWriteError(null), []);
 
   const currentPet = pets.find((p) => p.id === currentPetId) || null;
   const petId = currentPet?.id ?? null;
@@ -129,6 +145,17 @@ export function StoreProvider({ children }) {
       setCurrentPetId(saved && pets.some((p) => p.id === saved) ? saved : pets[0].id);
     })();
   }, [pets]);
+
+  // Every screen is "the current pet's ...", so an account with no pets has
+  // nothing to show — open the registration form instead of an empty home
+  // (08_TechStack: no seed data, each account starts empty). This only fires on
+  // the transition, so closing the form doesn't immediately reopen it.
+  useEffect(() => {
+    if (petsLoaded && pets.length === 0) {
+      setEditingPetId(null);
+      setShowPetForm(true);
+    }
+  }, [petsLoaded, pets.length]);
 
   // Which item tab 전체 기록보기 opens on. Lives here so the calendar can jump
   // straight to one item (06_UserFlow "항목 선택 시 수정") — its day panel shows
@@ -167,44 +194,65 @@ export function StoreProvider({ children }) {
   const openPetForm = useCallback((id = null) => {
     setEditingPetId(id);
     setShowPetMenu(false);
+    setWriteError(null);
     setShowPetForm(true);
   }, []);
 
   const closePetForm = useCallback(() => {
     setShowPetForm(false);
     setEditingPetId(null);
+    setWriteError(null);
   }, []);
 
   const addPet = useCallback(async (data) => {
-    const created = await petRepo.add(data);
-    await invalidatePets();
-    setCurrentPetId(created.id);
-    await petRepo.setSelectedId(created.id);
-    closePetForm();
-    return created;
+    try {
+      setWriteError(null);
+      const created = await petRepo.add(data);
+      await invalidatePets();
+      setCurrentPetId(created.id);
+      await petRepo.setSelectedId(created.id);
+      closePetForm();
+      return created;
+    } catch (e) {
+      setWriteError(writeMessage(e, '반려동물을 등록하지 못했습니다'));
+      return null;
+    }
   }, [closePetForm]);
 
   const updatePet = useCallback(async (id, data) => {
-    await petRepo.update(id, data);
-    await invalidatePets();
-    closePetForm();
+    try {
+      setWriteError(null);
+      await petRepo.update(id, data);
+      await invalidatePets();
+      closePetForm();
+    } catch (e) {
+      setWriteError(writeMessage(e, '수정하지 못했습니다'));
+    }
   }, [closePetForm]);
 
   const removePet = useCallback(
     async (id) => {
-      await petRepo.remove(id);
-      await recordRepo.removeByPet(id); // cascade — no orphan records
-      await invalidatePets();
-      await invalidateRecords(id);
-      if (id === currentPetId) {
-        // Read the fresh list directly: the query refetch may not have landed
-        // yet, and the next selection has to be right now.
-        const list = await petRepo.list();
-        const next = list[0]?.id ?? null;
-        setCurrentPetId(next);
-        await petRepo.setSelectedId(next);
+      try {
+        setWriteError(null);
+        // Records go first. The DB cascades them when the pet row goes, but
+        // that would take their Storage paths with it and leave the photo files
+        // behind — removeByPet reads the paths before deleting.
+        await recordRepo.removeByPet(id);
+        await petRepo.remove(id);
+        await invalidatePets();
+        await invalidateRecords(id);
+        if (id === currentPetId) {
+          // Read the fresh list directly: the query refetch may not have landed
+          // yet, and the next selection has to be right now.
+          const list = await petRepo.list();
+          const next = list[0]?.id ?? null;
+          setCurrentPetId(next);
+          await petRepo.setSelectedId(next);
+        }
+        closePetForm();
+      } catch (e) {
+        setWriteError(writeMessage(e, '삭제하지 못했습니다'));
       }
-      closePetForm();
     },
     [currentPetId, closePetForm]
   );
@@ -216,13 +264,20 @@ export function StoreProvider({ children }) {
     }
   }, []);
 
+  // 스낵바의 "실행취소"가 무엇을 되돌릴지는 띄우는 쪽이 정한다. 기록 저장은
+  // 방금 만든 행을 지우는 것이고 일정 완료는 상태를 되돌리고 자동 생성된 다음
+  // 일정을 지우는 것이라, 스낵바 하나에 동작을 고정해 둘 수 없다.
+  const undoAction = useRef(null);
+
   const showSnack = useCallback(
-    (msg) => {
+    (msg, onUndo = null) => {
       clearSnackTimer();
       setToast(null);
+      undoAction.current = onUndo;
       setSnack(msg);
       snackTimer.current = setTimeout(() => {
         setSnack((cur) => (cur === msg ? null : cur));
+        undoAction.current = null;
       }, 4000);
     },
     [clearSnackTimer]
@@ -242,17 +297,29 @@ export function StoreProvider({ children }) {
     [clearSnackTimer]
   );
 
-  const openSheet = useCallback((name, fromMore = false) => {
+  // Which day the open sheet writes to. Always reopens on today, so the quick
+  // path costs no extra taps; the sheet's 기록 날짜 field moves it when the user
+  // is filling in something they forgot yesterday.
+  const [sheetDate, setSheetDate] = useState(today);
+
+  const openSheet = useCallback((name, fromMore = false, date) => {
     if (name === 'walk') setWalkMin(20);
     setCondStage('main');
     setSheetFromMore(fromMore);
+    setWriteError(null);
+    // 더보기 → 개별 기록으로 넘어갈 때도 이 함수를 거친다. 이미 시트가 열려
+    // 있으면 그때 고른 날짜를 유지해야 한다 — 아니면 캘린더에서 넘어온 날짜가
+    // 한 칸 건너뛰는 사이에 오늘로 되돌아간다.
+    setSheetDate((cur) => date ?? (sheet ? cur : today));
     setSheet(name);
-  }, []);
+  }, [sheet, today]);
 
   const closeSheet = useCallback(() => {
     setSheet(null);
     setCondStage('main');
-  }, []);
+    setWriteError(null);
+    setSheetDate(today);
+  }, [today]);
 
   // Create one or more event records, then surface the snackbar. The ids are
   // tracked so undo can remove exactly this batch (a single tap, or the whole
@@ -260,23 +327,42 @@ export function StoreProvider({ children }) {
   const addRecords = useCallback(
     async (entries, msg) => {
       const added = [];
-      for (const e of entries) {
-        const rec = await recordRepo.add({
-          petId,
-          recordDate: today,
-          recordType: e.recordType,
-          data: e.data || {},
-          memo: e.memo ?? null,
-        });
-        added.push(rec.id);
+      try {
+        setWriteError(null);
+        for (const e of entries) {
+          const rec = await recordRepo.add({
+            petId,
+            // 항목별로 날짜를 다르게 줄 일은 없다. "오늘도 평소와 같아요"처럼
+            // 시트 없이 부르는 쪽은 today를 직접 넘긴다.
+            recordDate: e.recordDate ?? sheetDate,
+            recordType: e.recordType,
+            data: e.data || {},
+            memo: e.memo ?? null,
+          });
+          added.push(rec.id);
+        }
+      } catch (e) {
+        // Partial batches happen: "오늘도 평소와 같아요" writes several rows and
+        // the third can fail. Keep what landed (undo still targets exactly it)
+        // and leave the sheet open with the reason.
+        lastBatch.current = added;
+        await invalidateRecords(petId);
+        setWriteError(writeMessage(e, '저장하지 못했습니다'));
+        return;
       }
       lastBatch.current = added;
       await invalidateRecords(petId);
       setSheet(null);
       setCondStage('main');
-      showSnack(msg);
+      setSheetDate(today); // 다음에 여는 시트는 다시 오늘부터
+      // 이 배치만 정확히 지운다 — 한 번 탭이든 "오늘도 평소와 같아요" 한 벌이든.
+      showSnack(msg, async () => {
+        for (const id of lastBatch.current) await recordRepo.remove(id);
+        lastBatch.current = [];
+        await invalidateRecords(petId);
+      });
     },
-    [petId, today, showSnack]
+    [petId, today, sheetDate, showSnack]
   );
 
   const addRecord = useCallback((entry, msg) => addRecords([entry], msg), [addRecords]);
@@ -286,42 +372,147 @@ export function StoreProvider({ children }) {
   // batch, so offering it here would delete the wrong rows.
   const [editingRecord, setEditingRecord] = useState(null);
 
-  const openEditRecord = useCallback((record) => setEditingRecord(record), []);
-  const closeEditRecord = useCallback(() => setEditingRecord(null), []);
+  const openEditRecord = useCallback((record) => {
+    setWriteError(null);
+    setEditingRecord(record);
+  }, []);
+  const closeEditRecord = useCallback(() => {
+    setEditingRecord(null);
+    setWriteError(null);
+  }, []);
 
   const updateRecord = useCallback(
     async (id, patch) => {
-      await recordRepo.update(id, patch); // repo stamps updatedAt
-      await invalidateRecords(petId);
-      setEditingRecord(null);
-      showToast('수정되었습니다');
+      try {
+        setWriteError(null);
+        await recordRepo.update(id, patch); // DB trigger stamps updated_at
+        await invalidateRecords(petId);
+        setEditingRecord(null);
+        showToast('수정되었습니다');
+      } catch (e) {
+        setWriteError(writeMessage(e, '수정하지 못했습니다'));
+      }
     },
     [petId, showToast]
   );
 
   const deleteRecord = useCallback(
     async (id) => {
-      await recordRepo.remove(id);
-      await invalidateRecords(petId);
-      setEditingRecord(null);
-      showToast('삭제되었습니다');
+      try {
+        setWriteError(null);
+        await recordRepo.remove(id);
+        await invalidateRecords(petId);
+        setEditingRecord(null);
+        showToast('삭제되었습니다');
+      } catch (e) {
+        setWriteError(writeMessage(e, '삭제하지 못했습니다'));
+      }
     },
     [petId, showToast]
   );
 
   const undo = useCallback(async () => {
     clearSnackTimer();
-    for (const id of lastBatch.current) await recordRepo.remove(id);
-    lastBatch.current = [];
-    await invalidateRecords(petId);
     setSnack(null);
-  }, [clearSnackTimer, petId]);
+    const action = undoAction.current;
+    undoAction.current = null;
+    if (!action) return;
+    try {
+      await action();
+    } catch (e) {
+      // No sheet is open here, so the toast is visible.
+      showToast('실행취소하지 못했습니다');
+    }
+  }, [clearSnackTimer, showToast]);
 
   const toggleSymptom = useCallback((op) => {
     setSymptoms((cur) =>
       cur.includes(op) ? cur.filter((x) => x !== op) : [...cur, op]
     );
   }, []);
+
+  // --- 건강 일정 --------------------------------------------------------
+  //
+  // 일정은 "앞으로 할 일", 기록은 "이미 한 일"이라 도메인이 나뉘어 있다
+  // (03_DB_Design "일정과 기록의 관계"). 폼 상태는 반려동물 폼과 같은 모양이다.
+
+  const { data: schedules = [] } = useSchedules(petId);
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(null); // null = 새 일정
+
+  const openScheduleForm = useCallback((schedule = null) => {
+    setEditingSchedule(schedule);
+    setWriteError(null);
+    setShowScheduleForm(true);
+  }, []);
+
+  const closeScheduleForm = useCallback(() => {
+    setShowScheduleForm(false);
+    setEditingSchedule(null);
+    setWriteError(null);
+  }, []);
+
+  const saveSchedule = useCallback(
+    async (data) => {
+      try {
+        setWriteError(null);
+        if (editingSchedule) await scheduleRepo.update(editingSchedule.id, data);
+        else await scheduleRepo.add({ ...data, petId, status: 'planned' });
+        await invalidateSchedules(petId);
+        closeScheduleForm();
+      } catch (e) {
+        setWriteError(writeMessage(e, '일정을 저장하지 못했습니다'));
+      }
+    },
+    [petId, editingSchedule, closeScheduleForm]
+  );
+
+  const deleteSchedule = useCallback(
+    async (id) => {
+      try {
+        setWriteError(null);
+        await scheduleRepo.remove(id);
+        await invalidateSchedules(petId);
+        closeScheduleForm();
+        showToast('일정을 삭제했어요');
+      } catch (e) {
+        setWriteError(writeMessage(e, '삭제하지 못했습니다'));
+      }
+    },
+    [petId, closeScheduleForm, showToast]
+  );
+
+  const completeSchedule = useCallback(
+    async (schedule) => {
+      try {
+        const result = await scheduleRepo.complete(schedule.id);
+        await invalidateSchedules(petId);
+        if (!result) return;
+        // 반복 주기가 있으면 다음 일정이 함께 생겼다. 되돌릴 때는 상태 복원과
+        // 그 일정 삭제를 같이 해야 한다 — 하나만 하면 어긋난 상태가 남는다.
+        showSnack(
+          result.nextId ? '완료했어요 · 다음 일정을 만들었어요' : '완료했어요',
+          async () => {
+            await scheduleRepo.uncomplete(schedule.id, result.previousStatus, result.nextId);
+            await invalidateSchedules(petId);
+          }
+        );
+      } catch (e) {
+        // 시트가 아니라 목록에서 누르는 동작이라 토스트가 보인다.
+        showToast(writeMessage(e, '완료 처리하지 못했습니다'));
+      }
+    },
+    [petId, showSnack, showToast]
+  );
+
+  // 홈 "다음 일정" 카드 — 오늘 이후로 가장 가까운 예정 일정 하나.
+  const nextSchedule = useMemo(
+    () =>
+      schedules
+        .filter((s) => s.status === 'planned' && s.scheduledDate >= today)
+        .sort((a, b) => (a.scheduledDate < b.scheduledDate ? -1 : 1))[0] ?? null,
+    [schedules, today]
+  );
 
   const todayItems = useMemo(() => summarizeDay(records), [records]);
 
@@ -350,6 +541,8 @@ export function StoreProvider({ children }) {
     sheetFromMore,
     openSheet,
     closeSheet,
+    sheetDate,
+    setSheetDate,
     condStage,
     setCondStage,
     walkMin,
@@ -374,6 +567,17 @@ export function StoreProvider({ children }) {
     snack,
     toast,
     showToast,
+    writeError,
+    clearWriteError,
+    schedules,
+    nextSchedule,
+    showScheduleForm,
+    editingSchedule,
+    openScheduleForm,
+    closeScheduleForm,
+    saveSchedule,
+    deleteSchedule,
+    completeSchedule,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

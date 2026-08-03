@@ -4,6 +4,7 @@
     "slug": "pet-health-diary",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "petapp",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
@@ -29,7 +30,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#FFEFD6"
         }
-      ]
+      ],
+      "expo-web-browser"
     ]
   }
 }

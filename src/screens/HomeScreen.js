@@ -5,7 +5,8 @@ import { colors } from '../theme';
 import { useStore } from '../store';
 import { fetchRecordsByDate } from '../queries/records';
 import { speciesMeta } from '../pets';
-import { addDays, formatHeader } from '../date';
+import { addDays, formatHeader, daysUntil } from '../date';
+import { scheduleTitle, scheduleIcon } from '../scheduleRepo';
 import { scaled } from '../scale';
 
 // 강아지 = 산책 / 고양이 = 컨디션 (02_MVP_Requirement §3)
@@ -26,7 +27,7 @@ const SAME_TYPES = {
 };
 
 export default function HomeScreen() {
-  const { pet, species, currentPet, petId, today, setShowPetMenu, openSheet, todayItems, addRecords, showToast, setTab } =
+  const { pet, species, currentPet, petId, today, setShowPetMenu, openSheet, todayItems, addRecords, showToast, setTab, nextSchedule } =
     useStore();
 
   const meta = speciesMeta(species);
@@ -43,7 +44,9 @@ export default function HomeScreen() {
       .filter((r) => types.includes(r.recordType))
       .map((r) => {
         const { photos, ...data } = r.data || {}; // don't duplicate photos
-        return { recordType: r.recordType, data };
+        // 이 버튼은 시트를 거치지 않으므로 날짜를 직접 준다 — 어제를 오늘로
+        // 복사하는 기능이라 언제나 오늘이다(store.js addRecords).
+        return { recordType: r.recordType, data, recordDate: today };
       });
     if (copy.length === 0) {
       showToast('어제 기록이 없어 불러올 수 없어요');
@@ -106,21 +109,29 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* next schedule */}
-      <Pressable style={styles.schedCard}>
-        <View style={styles.rowCenter}>
-          <View style={styles.schedIcon}>
-            <Icon name="vaccine" size={18} color={colors.blue} />
+      {/* next schedule — 없으면 카드를 아예 내지 않는다. "일정 없음"을 띄우면
+          빈 계정의 홈이 안내 문구로만 채워진다. */}
+      {nextSchedule && (
+        <Pressable style={styles.schedCard} onPress={() => setTab('schedule')}>
+          <View style={styles.rowCenter}>
+            <View style={styles.schedIcon}>
+              <Icon name={scheduleIcon(nextSchedule)} size={18} color={colors.blue} />
+            </View>
+            <View>
+              <Text style={styles.schedSmall}>다음 일정</Text>
+              <Text style={styles.schedTitle}>{scheduleTitle(nextSchedule)}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.schedSmall}>다음 일정</Text>
-            <Text style={styles.schedTitle}>심장사상충</Text>
+          <View style={styles.dBadge}>
+            <Text style={styles.dBadgeText}>
+              {(() => {
+                const d = daysUntil(today, nextSchedule.scheduledDate);
+                return d === 0 ? 'D-day' : `D-${d}`;
+              })()}
+            </Text>
           </View>
-        </View>
-        <View style={styles.dBadge}>
-          <Text style={styles.dBadgeText}>D-3</Text>
-        </View>
-      </Pressable>
+        </Pressable>
+      )}
 
       {/* today records */}
       <View style={styles.section}>

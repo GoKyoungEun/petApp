@@ -26,6 +26,7 @@ import { isValidYmd } from '../date';
 import { MAX_PHOTOS } from '../repository';
 import { pickRecordPhotos, captureRecordPhoto } from '../photo';
 import { PHOTO_CATEGORIES } from './HealthPhotoSheet';
+import SheetError from './SheetError';
 
 const TITLE = {
   meal: '식사', stool: '배변', urine: '소변', vomit: '구토',
@@ -50,7 +51,7 @@ const SYMPTOM_OPTS = [
 ];
 
 export default function EditRecordSheet() {
-  const { editingRecord, closeEditRecord, updateRecord, deleteRecord } = useStore();
+  const { editingRecord, closeEditRecord, updateRecord, deleteRecord, writeError } = useStore();
 
   const rec = editingRecord;
   const type = rec?.recordType;
@@ -294,6 +295,8 @@ export default function EditRecordSheet() {
               {!dateOk && <Text style={styles.errText}>날짜 형식을 확인해 주세요</Text>}
             </Field>
           </ScrollView>
+
+          <SheetError message={writeError} />
 
           <Pressable
             style={[styles.saveBtn, !canSave && styles.saveBtnOff]}

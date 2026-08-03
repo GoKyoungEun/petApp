@@ -15,6 +15,7 @@ export const recordKeys = {
   pet: (petId) => ['records', petId],
   byDate: (petId, date) => ['records', petId, 'byDate', date],
   byType: (petId, type) => ['records', petId, 'byType', type],
+  range: (petId, from, to) => ['records', petId, 'range', from, to],
   dates: (petId) => ['records', petId, 'dates'],
 };
 
@@ -34,6 +35,16 @@ export function useRecordsByType(petId, type) {
     queryKey: recordKeys.byType(petId, type),
     queryFn: () => recordRepo.listByType(petId, type),
     enabled: !!petId && !!type,
+  });
+}
+
+// Every type over a date range — the 통계 화면 builds all six cards from this
+// one query instead of one request per card.
+export function useRecordsInRange(petId, from, to) {
+  return useQuery({
+    queryKey: recordKeys.range(petId, from, to),
+    queryFn: () => recordRepo.listByRange(petId, from, to),
+    enabled: !!petId && !!from && !!to,
   });
 }
 
