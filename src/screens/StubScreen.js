@@ -8,7 +8,6 @@ const INFO = {
   calendar: { icon: 'calendar', title: '캘린더', desc: '날짜별 기록을 한눈에 볼 수 있어요' },
   schedule: { icon: 'vaccine', title: '건강 일정', desc: '예방접종·검진 일정을 관리해요' },
   stats: { icon: 'chart', title: '통계', desc: '기간별 기록 요약을 확인해요' },
-  my: { icon: 'user', title: 'MY', desc: '반려동물과 앱 설정을 관리해요' },
 };
 
 export default function StubScreen({ name }) {

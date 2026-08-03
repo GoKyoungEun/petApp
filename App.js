@@ -12,6 +12,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import AllRecordsScreen from './src/screens/AllRecordsScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import StubScreen from './src/screens/StubScreen';
+import MyScreen from './src/screens/MyScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import BottomNav from './src/components/BottomNav';
 import QuickRecordSheet from './src/components/QuickRecordSheet';
@@ -32,6 +33,8 @@ function Root() {
           <AllRecordsScreen />
         ) : tab === 'calendar' ? (
           <CalendarScreen />
+        ) : tab === 'my' ? (
+          <MyScreen />
         ) : (
           <StubScreen name={tab} />
         )}
