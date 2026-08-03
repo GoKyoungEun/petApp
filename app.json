@@ -12,7 +12,9 @@
     },
     "android": {
       "package": "kr.co.outspring.banryeojangsaeng",
-      "blockedPermissions": ["android.permission.RECORD_AUDIO"],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#B85C2E",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -41,6 +43,12 @@
           "cameraPermission": "지금 찍은 사진을 기록에 남기려면 카메라 접근이 필요해요."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b2ea4c3c-ab0e-4c11-9c92-8b2280bacac1"
+      }
+    },
+    "owner": "kyoungeun"
   }
 }
