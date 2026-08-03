@@ -264,6 +264,40 @@ alter table public.schedules
   foreign key (linked_record_id) references public.medical_records (id) on delete set null;
 
 -- ---------------------------------------------------------------------------
+-- 회원 탈퇴
+--
+-- auth.users를 지우려면 service_role 권한이 필요한데, 그 키를 앱에 넣으면 누구나
+-- 남의 계정을 지울 수 있다. 대신 **자기 자신만** 지우는 함수를 하나 두고 로그인한
+-- 사용자에게만 실행 권한을 준다. security definer라 함수 소유자 권한으로 돌지만,
+-- 지우는 대상이 auth.uid()로 못 박혀 있어 남의 계정에는 닿지 못한다.
+--
+-- search_path를 비워 두는 이유: definer 함수가 호출자가 만든 동명의 스키마를
+-- 타고 엉뚱한 테이블을 보는 것을 막는다. 그래서 아래는 전부 정규화된 이름이다.
+--
+-- 앱은 이 함수를 부르기 전에 Storage 파일과 각 테이블 행을 먼저 지운다
+-- (src/account.js). cascade 설정에 기대지 않으려는 것이다.
+-- ---------------------------------------------------------------------------
+
+create or replace function public.delete_current_user()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then
+    raise exception '로그인이 필요합니다';
+  end if;
+  delete from auth.users where id = uid;
+end;
+$$;
+
+revoke all on function public.delete_current_user() from public, anon;
+grant execute on function public.delete_current_user() to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Storage — record-photos 버킷(비공개).
 --
 -- 경로 첫 폴더가 소유자 검증 기준이다(08_TechStack "이미지 저장"):

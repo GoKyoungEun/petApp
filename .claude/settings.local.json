@@ -160,7 +160,13 @@
       "Bash(node __TRACKED_VAR__/recolor.js assets/icon-src/app-mark.png __TRACKED_VAR__/variants)",
       "Bash(cp __TRACKED_VAR__/recolor.js tools/_recolor-tmp.js)",
       "Bash(node tools/_recolor-tmp.js assets/icon-src/app-mark.png __TRACKED_VAR__/variants)",
-      "Bash(sed -i \"s/let remaining = outside.reduce\\(\\(a, b\\) => a + b, 0\\);/let remaining = outside.reduce\\(\\(a, b\\) => a + b, 0\\);\\\\n  console.log\\('  마스크 확장 후 바깥:', remaining\\);/\" tools/_recolor-tmp.js)"
+      "Bash(sed -i \"s/let remaining = outside.reduce\\(\\(a, b\\) => a + b, 0\\);/let remaining = outside.reduce\\(\\(a, b\\) => a + b, 0\\);\\\\n  console.log\\('  마스크 확장 후 바깥:', remaining\\);/\" tools/_recolor-tmp.js)",
+      "Bash(sed -i \"s|import { medicalRepo } from './medicalRepo';|import { medicalRepo } from './medicalRepo';\\\\nimport { deleteAccount } from './account';|\" src/store.js)",
+      "Bash(sed -i \"s/^    restoreSchedule,$/    restoreSchedule,\\\\n    legalDoc,\\\\n    openLegal,\\\\n    deleting,\\\\n    removeAccount,/\" src/store.js)",
+      "Bash(sed -i \"s|import { View, Text, Image, Pressable, ActivityIndicator, StyleSheet } from 'react-native';|import {\\\\n  View,\\\\n  Text,\\\\n  Image,\\\\n  Pressable,\\\\n  ActivityIndicator,\\\\n  Modal,\\\\n  ScrollView,\\\\n  StyleSheet,\\\\n} from 'react-native';\\\\nimport Icon from '../Icon';|\" src/screens/LoginScreen.js)",
+      "Bash(sed -i \"s|import { signInWith, redirectTo } from '../auth';|import { signInWith, redirectTo } from '../auth';\\\\nimport { TERMS, PRIVACY } from '../legal';|\" src/screens/LoginScreen.js)",
+      "Bash(sed -i \"s|^  const \\\\[error, setError\\\\] = useState\\(null\\);|  const [error, setError] = useState\\(null\\);\\\\n  // null | 'terms' | 'privacy'\\\\n  const [doc, setDoc] = useState\\(null\\);|\" src/screens/LoginScreen.js)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8085/)"
     ]
   }
 }

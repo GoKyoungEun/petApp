@@ -12,6 +12,7 @@ import { recordRepo } from './repository';
 import { petRepo } from './petRepo';
 import { scheduleRepo } from './scheduleRepo';
 import { medicalRepo } from './medicalRepo';
+import { deleteAccount } from './account';
 import { todayYmd } from './date';
 import { useRecordsByDate, invalidateRecords } from './queries/records';
 import { usePets, invalidatePets } from './queries/pets';
@@ -559,6 +560,36 @@ export function StoreProvider({ children }) {
     [petId, medicalForm, showSnack]
   );
 
+  // --- 약관·계정 ---------------------------------------------------------
+
+  // 어느 문서를 볼지. 'terms' | 'privacy'
+  const [legalDoc, setLegalDoc] = useState('terms');
+
+  const openLegal = useCallback((doc) => {
+    setLegalDoc(doc);
+    setTab('legal');
+  }, []);
+
+  // 탈퇴는 되돌릴 수 없어서 실패했을 때 무엇이 지워지고 무엇이 남았는지가
+  // 중요하다. 성공하면 세션이 사라져 로그인 화면으로 돌아가므로 알림이 필요
+  // 없고, 실패했을 때만 메시지를 남긴다.
+  const [deleting, setDeleting] = useState(false);
+
+  const removeAccount = useCallback(async () => {
+    setDeleting(true);
+    try {
+      setWriteError(null);
+      await deleteAccount();
+      // onAuthStateChange가 게이트를 닫는다. 캐시는 App.js가 비운다.
+    } catch (e) {
+      setWriteError(
+        writeMessage(e, '탈퇴하지 못했습니다. 지워진 데이터는 되돌릴 수 없으니 다시 시도해 주세요')
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }, []);
+
   // 완료 기록 없이 끝난 일정을 다시 할 일로 되돌린다. 완료 기록 기능 전에
   // 완료해 둔 데이터를 정리하는 유일한 수단이다.
   const restoreSchedule = useCallback(
@@ -679,6 +710,10 @@ export function StoreProvider({ children }) {
     saveMedical,
     deleteMedical,
     restoreSchedule,
+    legalDoc,
+    openLegal,
+    deleting,
+    removeAccount,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

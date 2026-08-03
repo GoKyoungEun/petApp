@@ -8,10 +8,21 @@
 // 애플 로그인은 iOS 앱스토어 배포 때 필수라 그때 추가한다(08_TechStack).
 
 import React, { useState } from 'react';
-import { View, Text, Image, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import Icon from '../Icon';
 import { colors } from '../theme';
 import { scaled } from '../scale';
 import { signInWith, redirectTo } from '../auth';
+import { TERMS, PRIVACY } from '../legal';
 
 const PROVIDERS = [
   { key: 'kakao', label: '카카오로 시작하기', bg: '#FEE500', fg: '#191600' },
@@ -22,6 +33,8 @@ export default function LoginScreen() {
   // 어느 버튼을 눌렀는지까지 들고 있어야 그 버튼에만 스피너를 돌릴 수 있다.
   const [pending, setPending] = useState(null);
   const [error, setError] = useState(null);
+  // 열려 있는 문서. null | 'terms' | 'privacy'
+  const [doc, setDoc] = useState(null);
 
   const start = async (provider) => {
     setError(null);
@@ -77,13 +90,52 @@ export default function LoginScreen() {
             바뀌므로 눈으로 확인할 수 있어야 한다(08_TechStack "리디렉트 URI"). */}
         {__DEV__ ? <Text style={styles.debug}>redirect: {redirectTo}</Text> : null}
 
-        {/* 링크는 아직 없다 — 이용약관·개인정보 처리방침 문서 자체가 미작성
-            (09_Todo "다음 구현 우선순위" 6). */}
+        {/* 가입하기 **전에** 읽을 수 있어야 한다. 이 화면은 StoreProvider
+            바깥이라 탭 전환을 쓸 수 없어 자체 모달로 띄운다. */}
         <Text style={styles.terms}>
-          계속하면 이용약관과 개인정보 처리방침에 동의하는 것으로 봅니다
+          계속하면{' '}
+          <Text style={styles.termsLink} onPress={() => setDoc('terms')}>이용약관</Text>
+          과{' '}
+          <Text style={styles.termsLink} onPress={() => setDoc('privacy')}>
+            개인정보 처리방침
+          </Text>
+          에 동의하는 것으로 봅니다
         </Text>
       </View>
+
+      <LegalModal doc={doc} onClose={() => setDoc(null)} />
     </View>
+  );
+}
+
+function LegalModal({ doc, onClose }) {
+  if (!doc) return null;
+  const { title, sections } =
+    doc === 'privacy'
+      ? { title: '개인정보 처리방침', sections: PRIVACY }
+      : { title: '이용약관', sections: TERMS };
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.docWrap}>
+        <View style={styles.docCard}>
+          <View style={styles.docHead}>
+            <Text style={styles.docTitle}>{title}</Text>
+            <Pressable onPress={onClose} hitSlop={8}>
+              <Icon name="x" size={18} color={colors.textMuted} />
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={styles.docBody} showsVerticalScrollIndicator={false}>
+            {sections.map((s) => (
+              <View key={s.heading} style={styles.docSection}>
+                <Text style={styles.docHeading}>{s.heading}</Text>
+                <Text style={styles.docText}>{s.body}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -128,6 +180,28 @@ const styles = StyleSheet.create(scaled({
     color: colors.textFaint,
     textAlign: 'center',
   },
+  termsLink: { color: colors.primary, fontWeight: '700', textDecorationLine: 'underline' },
+
+  docWrap: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(20,15,10,0.4)' },
+  docCard: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '86%',
+    paddingTop: 18,
+  },
+  docHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  docTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
+  docBody: { paddingHorizontal: 20, paddingBottom: 28 },
+  docSection: { marginBottom: 18 },
+  docHeading: { fontSize: 13, fontWeight: '800', color: colors.text, marginBottom: 5 },
+  docText: { fontSize: 12, lineHeight: 20, color: colors.textBody },
   debug: {
     fontSize: 10,
     lineHeight: 14,

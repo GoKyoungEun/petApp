@@ -5,7 +5,17 @@
 // 등록·수정 폼은 PetForm 하나를 그대로 쓴다.
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  ScrollView,
+  Modal,
+  TextInput,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
@@ -15,10 +25,14 @@ import { currentUser, signOut } from '../auth';
 import appJson from '../../app.json';
 
 export default function MyScreen() {
-  const { pets, currentPetId, selectPet, openPetForm } = useStore();
+  const {
+    pets, currentPetId, selectPet, openPetForm,
+    openLegal, removeAccount, deleting, writeError,
+  } = useStore();
 
   const [user, setUser] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -136,16 +150,101 @@ export default function MyScreen() {
       {/* 앱 정보 */}
       <Text style={styles.sectionLabel}>앱 정보</Text>
       <View style={styles.card}>
-        <View style={[styles.row, styles.rowLast]}>
+        <Pressable style={styles.row} onPress={() => openLegal('terms')}>
           <View style={styles.rowLeft}>
             <Icon name="file-text" size={16} color={colors.textMuted} />
+            <Text style={styles.rowLabel}>이용약관</Text>
+          </View>
+          <Icon name="chevron-right" size={14} color={colors.textGhost} />
+        </Pressable>
+        <Pressable style={styles.row} onPress={() => openLegal('privacy')}>
+          <View style={styles.rowLeft}>
+            <Icon name="file-text" size={16} color={colors.textMuted} />
+            <Text style={styles.rowLabel}>개인정보 처리방침</Text>
+          </View>
+          <Icon name="chevron-right" size={14} color={colors.textGhost} />
+        </Pressable>
+        <View style={[styles.row, styles.rowLast]}>
+          <View style={styles.rowLeft}>
+            <Icon name="paw" size={16} color={colors.textMuted} />
             <Text style={styles.rowLabel}>버전</Text>
           </View>
           {/* app.json을 그대로 읽는다 — 버전을 두 군데 적어 두면 어긋난다. */}
           <Text style={styles.rowValue}>{appJson.expo.version}</Text>
         </View>
       </View>
+
+      {/* 회원 탈퇴 — 되돌릴 수 없어서 다른 동작과 떨어뜨려 맨 아래에 둔다. */}
+      <Pressable style={styles.leaveBtn} onPress={() => setConfirmLeave(true)} disabled={deleting}>
+        <Text style={styles.leaveText}>회원 탈퇴</Text>
+      </Pressable>
+
+      <LeaveSheet
+        visible={confirmLeave}
+        busy={deleting}
+        error={writeError}
+        petCount={pets.length}
+        onCancel={() => setConfirmLeave(false)}
+        onConfirm={removeAccount}
+      />
     </ScrollView>
+  );
+}
+
+// 탈퇴 확인. 두 번 누르기로 끝내지 않고 시트를 띄우는 이유는, 무엇이 지워지는지
+// 읽고 나서 누르게 하려는 것이다 — 되돌릴 수 없는 유일한 동작이다.
+function LeaveSheet({ visible, busy, error, petCount, onCancel, onConfirm }) {
+  const [typed, setTyped] = useState('');
+
+  useEffect(() => {
+    if (visible) setTyped('');
+  }, [visible]);
+
+  if (!visible) return null;
+
+  // 글자를 직접 치게 한다. 확인 버튼만 있으면 습관적으로 눌러 버린다.
+  const ok = typed.trim() === '탈퇴';
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={styles.leaveWrap}>
+        <View style={styles.leaveCard}>
+          <Text style={styles.leaveTitle}>정말 탈퇴할까요?</Text>
+          <Text style={styles.leaveBody}>
+            반려동물 {petCount}마리와 모든 기록·일정·사진이 지워집니다.
+            {'\n'}되돌릴 수 없어요.
+          </Text>
+
+          <Text style={styles.leaveHint}>계속하려면 “탈퇴”라고 입력해 주세요</Text>
+          <TextInput
+            style={styles.leaveInput}
+            value={typed}
+            onChangeText={setTyped}
+            placeholder="탈퇴"
+            placeholderTextColor={colors.textGhost}
+            autoCorrect={false}
+          />
+
+          {error ? <Text style={styles.leaveError}>{error}</Text> : null}
+
+          <View style={styles.leaveBtns}>
+            <Pressable style={styles.leaveCancel} onPress={onCancel} disabled={busy}>
+              <Text style={styles.leaveCancelText}>취소</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.leaveConfirm, (!ok || busy) && styles.leaveConfirmOff]}
+              onPress={onConfirm}
+              disabled={!ok || busy}>
+              {busy ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.leaveConfirmText}>탈퇴하기</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -257,4 +356,54 @@ const styles = StyleSheet.create(scaled({
   rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   rowLabel: { fontSize: 13, color: colors.textBody },
   rowValue: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
+
+  // 눈에 띄는 버튼으로 만들지 않는다 — 찾으면 있지만 먼저 눈에 들어오지는
+  // 않아야 하는 동작이다.
+  leaveBtn: { alignItems: 'center', paddingVertical: 22 },
+  leaveText: { fontSize: 12, color: colors.textFaint, textDecorationLine: 'underline' },
+
+  leaveWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+    backgroundColor: 'rgba(20,15,10,0.45)',
+  },
+  leaveCard: { backgroundColor: '#fff', borderRadius: 20, padding: 20 },
+  leaveTitle: { fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 8 },
+  leaveBody: { fontSize: 13, lineHeight: 20, color: colors.textBody, marginBottom: 16 },
+  leaveHint: { fontSize: 12, color: colors.textMuted, marginBottom: 6 },
+  leaveInput: {
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    fontSize: 14,
+    color: colors.text,
+  },
+  leaveError: {
+    marginTop: 10,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.badText,
+  },
+  leaveBtns: { flexDirection: 'row', gap: 9, marginTop: 16 },
+  leaveCancel: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  leaveCancelText: { fontSize: 14, fontWeight: '700', color: colors.textBody },
+  leaveConfirm: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: colors.badText,
+  },
+  leaveConfirmOff: { backgroundColor: colors.textGhost },
+  leaveConfirmText: { fontSize: 14, fontWeight: '700', color: '#fff' },
 }));

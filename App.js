@@ -17,6 +17,7 @@ import ScheduleScreen from './src/screens/ScheduleScreen';
 import StatsScreen from './src/screens/StatsScreen';
 import WeightScreen from './src/screens/WeightScreen';
 import MyScreen from './src/screens/MyScreen';
+import LegalScreen from './src/screens/LegalScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import BottomNav from './src/components/BottomNav';
 import QuickRecordSheet from './src/components/QuickRecordSheet';
@@ -73,6 +74,8 @@ function Root() {
           <StatsScreen />
         ) : tab === 'weight' ? (
           <WeightScreen />
+        ) : tab === 'legal' ? (
+          <LegalScreen />
         ) : (
           <MyScreen />
         )}
