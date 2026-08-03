@@ -10,7 +10,11 @@
   여전히 유효하고, 재구현할 때 그대로 쓴다.
 - **서버 자원도 그대로다.** Supabase 프로젝트·스키마·Storage 버킷·RLS와
   카카오/구글 OAuth 콘솔 설정은 클라우드에 살아 있다. 코드만 다시 쓰면 된다.
-- 앱 아이콘·스플래시 6종은 `assets/`에 남아 있다.
+- **앱 아이콘·스플래시도 유실됐다** (2026-08-03 확인). `assets/`에 파일이
+  6개 있어 남아 있는 줄 알았으나 전부 Expo 기본 템플릿이었다 — `icon.png`과
+  `android-icon-foreground.png`은 파란 "Λ" 로고, `splash-icon.png`은 회색
+  격자 플레이스홀더. 생성 스크립트 `tools/make-app-icons.js`도 없었다.
+  2026-08-03에 다시 만들었다([[10_ReleaseNote]] v0.5).
 
 재발 방지로 git 저장소를 만들고 원격(GitHub)에 연결했다. 이후 작업은
 Phase 브랜치에서 진행한다.
@@ -27,6 +31,8 @@ Phase 브랜치에서 진행한다.
 - 기록·펫 도메인 TanStack Query (`src/queries/records.js`·`pets.js`)
 - 기록 수정·삭제 시트 (`src/components/EditRecordSheet.js`)
 - 직접 만든 일러스트 아이콘 27종 (`assets/icon`, `tools/make-icons.js`로 생성)
+- 앱 아이콘·스플래시 하트+발바닥 마크 6종 (`tools/make-app-icons.js`로 생성),
+  `expo-splash-screen` 연결 (2026-08-03)
 - 건강사진 (`recordType: healthPhoto`): 더보기 → 전용 시트(카메라·갤러리
   멀티선택, 기록당 최대 6장, 저장 전 압축 1280px·JPEG q0.7, 카테고리 필수,
   메모 선택), 전체기록 탭 연결('전체'+카테고리 필터), 카드 안 3열 격자,

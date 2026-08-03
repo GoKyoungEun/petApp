@@ -10,6 +10,7 @@
     "expo": "~54.0.0",
     "expo-image-manipulator": "~14.0.8",
     "expo-image-picker": "~17.0.11",
+    "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -25,6 +26,7 @@
   },
   "private": true,
   "devDependencies": {
-    "@expo/ngrok": "^4.1.0"
+    "@expo/ngrok": "^4.1.0",
+    "pngjs": "^3.4.0"
   }
 }

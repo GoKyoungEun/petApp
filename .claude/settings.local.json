@@ -118,7 +118,14 @@
       "Bash(git switch *)",
       "Bash(git merge *)",
       "Bash(git branch *)",
-      "PowerShell($zip=\"C:\\\\Users\\\\cjddu\\\\Desktop\\\\petApp-icon-src.zip\"; Add-Type -AssemblyName System.IO.Compression.FileSystem; $a=[System.IO.Compression.ZipFile]::OpenRead\\($zip\\); \"압축 안 파일 수: $\\($a.Entries.Count\\)\"; \"샘플: \" + \\(\\($a.Entries | Select-Object -First 3 -ExpandProperty Name\\) -join ', '\\); $a.Dispose\\(\\))"
+      "PowerShell($zip=\"C:\\\\Users\\\\cjddu\\\\Desktop\\\\petApp-icon-src.zip\"; Add-Type -AssemblyName System.IO.Compression.FileSystem; $a=[System.IO.Compression.ZipFile]::OpenRead\\($zip\\); \"압축 안 파일 수: $\\($a.Entries.Count\\)\"; \"샘플: \" + \\(\\($a.Entries | Select-Object -First 3 -ExpandProperty Name\\) -join ', '\\); $a.Dispose\\(\\))",
+      "Bash(node tools/make-app-icons.js)",
+      "Bash(npm install *)",
+      "Bash(npx expo config *)",
+      "Bash(npx expo export *)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('.claude/settings.local.json','utf8'\\)\\); console.log\\('settings.local.json valid'\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('app.json','utf8'\\)\\); JSON.parse\\(require\\('fs'\\).readFileSync\\('package.json','utf8'\\)\\); JSON.parse\\(require\\('fs'\\).readFileSync\\('.claude/launch.json','utf8'\\)\\); console.log\\('app.json / package.json / launch.json valid'\\)\")",
+      "Bash(git -C /c/Users/admin/Desktop/go/petApp status --short --branch)"
     ]
   }
 }
