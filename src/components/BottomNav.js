@@ -3,13 +3,14 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
+import { scaled } from '../scale';
 
 const TABS = [
-  { key: 'home', icon: 'home', label: '홈' },
-  { key: 'calendar', icon: 'calendar', label: '캘린더' },
-  { key: 'schedule', icon: 'vaccine', label: '일정' },
-  { key: 'stats', icon: 'chart', label: '통계' },
-  { key: 'my', icon: 'user', label: 'MY' },
+  { key: 'home', label: '홈' },
+  { key: 'calendar', label: '캘린더' },
+  { key: 'schedule', label: '일정' },
+  { key: 'stats', label: '통계' },
+  { key: 'my', label: 'MY' },
 ];
 
 export default function BottomNav() {
@@ -21,7 +22,9 @@ export default function BottomNav() {
         const color = active ? colors.primary : colors.textMuted;
         return (
           <Pressable key={t.key} style={styles.item} onPress={() => setTab(t.key)}>
-            <Icon name={t.icon} size={22} color={color} />
+            {/* The illustrated nav icons carry their own colour, so the state
+                comes from which file we pick, not from a tint. */}
+            <Icon name={`nav-${t.key}-${active ? 'active' : 'inactive'}`} size={22} />
             <Text style={[styles.label, { color, fontWeight: active ? '700' : '600' }]}>
               {t.label}
             </Text>
@@ -32,7 +35,7 @@ export default function BottomNav() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   nav: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -45,4 +48,4 @@ const styles = StyleSheet.create({
   },
   item: { alignItems: 'center', gap: 3 },
   label: { fontSize: 10 },
-});
+}));

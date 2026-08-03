@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, ScrollView, Pressable, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
-import { recordRepo } from '../repository';
+import { useRecordsByType } from '../queries/records';
+import { formatDay, parseYmd } from '../date';
+import { scaled } from '../scale';
+import { PHOTO_CATEGORIES } from '../components/HealthPhotoSheet';
 
 // Item tabs, fixed order per 05_UI_UX. key = recordType (healthPhoto has no
 // records yet — photos aren't attached to records in this pass).
@@ -19,19 +22,21 @@ const ITEMS = [
   { key: 'note', label: '메모' },
 ];
 
-const PHOTO_CATEGORIES = ['눈', '코', '발', '피부 및 모질', '기타'];
+// "전체" sits in front of the five categories and is the default, so opening
+// the tab shows every photo instead of an empty list (02 §6, 2026-07-29).
+const PHOTO_FILTERS = ['전체', ...PHOTO_CATEGORIES];
 
 // recordType → quick-sheet key for the "기록 추가" shortcut.
 const SHEET_KEY = {
   meal: 'meal', stool: 'poop', urine: 'pee', vomit: 'vomit',
   walk: 'walk', condition: 'condition', weight: 'weight', note: 'memo',
+  healthPhoto: 'photo',
 };
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 function formatDate(s) {
-  const d = new Date(s);
+  const d = parseYmd(s);
   if (isNaN(d.getTime())) return s;
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
+  return formatDay(s);
 }
 
 function describe(type, r) {
@@ -46,8 +51,19 @@ function describe(type, r) {
     case 'condition':
       return d.level + (d.symptoms?.length ? ` · ${d.symptoms.join(', ')}` : '');
     case 'note': return r.memo || '메모';
+    case 'healthPhoto':
+      return `${d.category || '기타'} · ${d.photos?.length || 0}장`;
     default: return '';
   }
+}
+
+// Split into rows of three. Same reason as the 더보기 grid: a percentage width
+// plus a gap overflows by a pixel or two on some widths and silently drops to
+// two per row, so build real rows and let flex divide them.
+function rowsOf3(list) {
+  const rows = [];
+  for (let i = 0; i < list.length; i += 3) rows.push(list.slice(i, i + 3));
+  return rows;
 }
 
 // Group records into date buckets, newest date first.
@@ -61,29 +77,21 @@ function groupByDate(records) {
 }
 
 export default function AllRecordsScreen() {
-  const { petId, setTab, openSheet } = useStore();
-  const [type, setType] = useState('meal');
-  const [records, setRecords] = useState([]);
-  const [photoCat, setPhotoCat] = useState('눈');
+  const { petId, setTab, openSheet, openEditRecord, recordsType: type, setRecordsType: setType } =
+    useStore();
+  const [photoCat, setPhotoCat] = useState('전체');
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      if (!petId || type === 'healthPhoto') {
-        if (alive) setRecords([]);
-        return;
-      }
-      const list = await recordRepo.listByType(petId, type);
-      if (alive) setRecords(list);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [petId, type]);
-
-  const grouped = groupByDate(records);
   const isPhoto = type === 'healthPhoto';
-  const empty = isPhoto || grouped.length === 0;
+  const { data: records = [] } = useRecordsByType(petId, type);
+
+  // 건강사진 keeps its category filter on top of the item tab.
+  const shown =
+    isPhoto && photoCat !== '전체'
+      ? records.filter((r) => (r.data?.category || '기타') === photoCat)
+      : records;
+
+  const grouped = groupByDate(shown);
+  const empty = grouped.length === 0;
 
   const addRecord = () => {
     const key = SHEET_KEY[type];
@@ -132,7 +140,7 @@ export default function AllRecordsScreen() {
           style={styles.catRow}
           contentContainerStyle={styles.catContent}
         >
-          {PHOTO_CATEGORIES.map((c) => {
+          {PHOTO_FILTERS.map((c) => {
             const on = c === photoCat;
             return (
               <Pressable
@@ -155,34 +163,49 @@ export default function AllRecordsScreen() {
         {empty ? (
           <View style={styles.emptyWrap}>
             <Text style={styles.emptyText}>
-              {isPhoto ? '아직 등록된 사진이 없어요' : '이날은 아직 기록이 없어요'}
+              {isPhoto && photoCat !== '전체'
+                ? `${photoCat} 사진이 아직 없어요`
+                : isPhoto
+                  ? '아직 등록된 사진이 없어요'
+                  : '이날은 아직 기록이 없어요'}
             </Text>
-            {!isPhoto && (
-              <Pressable style={styles.emptyBtn} onPress={addRecord}>
-                <Icon name="plus" size={15} color={colors.accentText} />
-                <Text style={styles.emptyBtnText}>기록 추가</Text>
-              </Pressable>
-            )}
+            {/* 건강사진도 전용 시트가 생겨 모든 항목에서 같은 버튼을 쓴다 (02 §6) */}
+            <Pressable style={styles.emptyBtn} onPress={addRecord}>
+              <Icon name="plus" size={15} color={colors.accentText} />
+              <Text style={styles.emptyBtnText}>기록 추가</Text>
+            </Pressable>
           </View>
         ) : (
           grouped.map(([date, items]) => (
             <View key={date} style={styles.card}>
               <Text style={styles.cardDate}>{formatDate(date)}</Text>
               {items.map((r) => (
-                <View key={r.id} style={styles.entryBlock}>
+                <Pressable
+                  key={r.id}
+                  style={styles.entryBlock}
+                  onPress={() => openEditRecord(r)}>
                   <View style={styles.entry}>
                     <View style={styles.dot} />
                     <Text style={styles.entryText}>{describe(type, r)}</Text>
+                    <Icon name="edit" size={13} color={colors.textGhost} />
                   </View>
                   {r.memo ? <Text style={styles.entryMemo}>{r.memo}</Text> : null}
+                  {/* 3열 격자로 모두 표시 — 최대 6장이면 3열 2행 (02 §6) */}
                   {r.data?.photos?.length ? (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
-                      {r.data.photos.map((uri, i) => (
-                        <Image key={i} source={{ uri }} style={styles.entryPhoto} />
+                    <View style={styles.photoGrid}>
+                      {rowsOf3(r.data.photos).map((row, ri) => (
+                        <View key={ri} style={styles.photoRow}>
+                          {row.map((uri, i) => (
+                            <Image key={i} source={{ uri }} style={styles.entryPhoto} />
+                          ))}
+                          {Array.from({ length: 3 - row.length }, (_, i) => (
+                            <View key={`f${i}`} style={styles.photoFiller} />
+                          ))}
+                        </View>
                       ))}
-                    </ScrollView>
+                    </View>
                   ) : null}
-                </View>
+                </Pressable>
               ))}
               {(type === 'urine' || type === 'vomit') && (
                 <Text style={styles.countHint}>총 {items.length}회</Text>
@@ -195,7 +218,7 @@ export default function AllRecordsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   wrap: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -251,8 +274,10 @@ const styles = StyleSheet.create({
   },
   entryText: { fontSize: 13, color: colors.textBody, fontWeight: '600', flex: 1 },
   entryMemo: { fontSize: 12, color: colors.textMuted, marginLeft: 15, lineHeight: 17 },
-  photoRow: { marginLeft: 15 },
-  entryPhoto: { width: 64, height: 64, borderRadius: 10, marginRight: 8, backgroundColor: colors.surfaceMuted },
+  photoGrid: { marginLeft: 15, gap: 6 },
+  photoRow: { flexDirection: 'row', gap: 6 },
+  photoFiller: { flex: 1 },
+  entryPhoto: { flex: 1, aspectRatio: 1, borderRadius: 10, backgroundColor: colors.surfaceMuted },
   countHint: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
   emptyWrap: { alignItems: 'center', paddingTop: 70, gap: 14 },
   emptyText: { fontSize: 13, color: colors.textMuted },
@@ -266,4 +291,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   emptyBtnText: { color: colors.accentText, fontWeight: '700', fontSize: 13 },
-});
+}));

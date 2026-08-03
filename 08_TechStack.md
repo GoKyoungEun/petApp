@@ -1,13 +1,19 @@
 # 08. Tech Stack
 
-프론트엔드·백엔드 모두 확정. (최종 갱신 2026-07-30)
+프론트엔드·백엔드 모두 확정. (최종 갱신 2026-08-01)
+
+> **읽는 법**: 아래 "확정"은 *기술 선택이 확정됐다*는 뜻이다. 7/24~7/30
+> 작업분 코드가 유실됐으므로(09_Todo "코드 유실"), 구현 상태는 문단마다
+> 붙인 **[현재]** 표시를 따른다. 서버 자원(Supabase 프로젝트·스키마·RLS·
+> Storage, 카카오/구글 OAuth 설정)은 클라우드에 살아 있어 재생성이 필요 없다.
 
 ## 앱 (확정)
 
 - **React Native + Expo SDK 54**
   - SDK 54를 쓰는 이유: 공개 Expo Go 앱이 SDK 54까지만 지원한다. 상위 SDK는 개발 빌드가 필요해 배포/테스트가 번거로워 54로 고정. (`AGENTS.md` 참고)
 - 주요 라이브러리: `@react-native-async-storage/async-storage`(로컬 저장), `expo-image-picker`(사진 선택·촬영), `expo-image-manipulator`(저장 전 압축·리사이즈), `react-native-safe-area-context`(세이프 영역), `@tanstack/react-query`(서버 상태 관리)
-- 상태 관리: UI 상태는 React Context (`src/store.js`), 데이터는 **TanStack Query 전환 완료 (2026-07-29)** — 일정(`src/queries/schedules.js`)·기록(`src/queries/records.js`)·펫(`src/queries/pets.js`) 세 도메인 모두 Query 캐시. 화면은 훅으로 읽고, 쓰기는 store.js가 repo 호출 후 키 prefix를 invalidate. dataVersion 수동 무효화 방식은 제거됨.
+- 상태 관리: UI 상태는 React Context (`src/store.js`), 데이터는 **TanStack Query**. 화면은 훅으로 읽고, 쓰기는 store.js가 repo 호출 후 키 prefix를 invalidate. dataVersion 수동 무효화 방식은 쓰지 않는다.
+  - **[현재]** 기록(`src/queries/records.js`)·펫(`src/queries/pets.js`) 두 도메인 적용. 일정(`src/queries/schedules.js`)은 일정 화면과 함께 재구현 대상.
 
 이유
 
@@ -19,25 +25,27 @@
 
 카메라 품질, 백그라운드 동작, 네이티브 모듈 제약은 사전 검증이 필요하다.
 
-## 데이터 계층 (확정 — 2026-07-30 Supabase 교체 완료)
+## 데이터 계층 (확정: repository 인터페이스 + Supabase)
 
 화면·스토어는 **async repository 인터페이스**에만 의존한다 (`src/repository.js` 기록, `src/petRepo.js` 반려동물, `src/scheduleRepo.js` 일정). 화면은 repo를 직접 부르지 않고 TanStack Query 훅(`src/queries/*.js`)을 거친다.
 
-- **현재: Supabase(PostgREST)**. AsyncStorage 영속은 걷어냈고, 남은 로컬 저장은 세션과 "선택된 펫"(`petapp:selectedPet:{user_id}`)뿐이다.
-- 인터페이스가 그대로여서 교체 시 화면 코드는 한 줄도 바뀌지 않았다 — 설계 의도대로 동작한 셈.
+- **[현재] 백킹은 AsyncStorage다.** Supabase 교체 코드가 유실돼 7/23 상태로 돌아갔다. 아래 Supabase 관련 서술은 재구현 목표이자 이미 검증된 설계로 읽는다.
+- 인터페이스가 그대로여서 7/30 교체 때 화면 코드는 한 줄도 바뀌지 않았다 — 설계 의도대로 동작한 셈이고, 재구현도 같은 경로를 따른다.
+- 교체 후 남을 로컬 저장은 세션과 "선택된 펫"(`petapp:selectedPet:{user_id}`)뿐이다.
 - 기록은 이벤트 기반(HealthRecord) — `03_DB_Design` 참고.
 - **컬럼 매핑**: 테이블마다 `FIELDS`(앱 camelCase 키 → 컬럼 snake_case) 한 벌만 선언하고 `src/db.js`의 `makeMapper`가 select 목록·row→앱·패치→row를 만든다. `writable` 목록에 없는 키(`id`·`created_at`·`updated_at`)는 패치로 못 건드린다.
 - **소유권**: 조회에 `user_id` 조건을 넣지 않는다 — RLS가 정한다. 쓰기에서 user_id가 필요한 곳(`pets.insert`, Storage 경로)만 세션에서 읽는다.
 - **id**: Postgres `gen_random_uuid()`. 앱이 만들던 `r1`/`p1`/`s1` 방식은 제거.
-- **캐시**: Query 하나만 쓴다(`staleTime` 5분, `retry` 1). repo의 인메모리 캐시는 제거.
+- **캐시**: Query 하나만 쓴다(`staleTime` 5분, `retry` 1 — `src/queryClient.js`). repo의 인메모리 캐시는 Supabase 교체 때 함께 제거한다. **[현재]** AsyncStorage 읽기를 감싸는 캐시가 `repository.js`에 남아 있다.
 - **실패 처리**: repo는 실패를 던지고 store가 받아 알린다. 스낵바·토스트는 시트(Modal) 위로 못 올라오므로, 시트가 열린 채 실패하면 시트 안에 메시지를 찍는다(`writeError`).
 - 미해결: 한 펫의 기록이 5000건을 넘으면 `limit(5000)`에서 잘린다 → 페이지네이션 필요.
 
 ## 백엔드 (확정: Supabase, 2026-07-29)
 
-**Supabase**로 확정 — 관계형/이벤트 스키마 적합성, Auth(카카오·구글·애플 OAuth 지원), Storage, 무료 티어. 프로젝트 생성·스키마 실행 완료(`supabase/schema.sql`, 03_DB_Design 기반, RLS 포함).
+**Supabase**로 확정 — 관계형/이벤트 스키마 적합성, Auth(카카오·구글·애플 OAuth 지원), Storage, 무료 티어. 프로젝트 생성·스키마 실행 완료(03_DB_Design 기반, RLS 포함) — **서버에 그대로 살아 있다.**
 
-- 소셜 로그인: **카카오·구글 연동 완료 (2026-07-30, 실기기 확인)**. 애플은 추후 추가 (iOS 앱스토어 배포 시 필수)
+- **[현재]** 앱 쪽 코드(`supabase/schema.sql` 사본, `src/supabase.js`, `src/auth.js`, `src/db.js`, `src/photoStore.js`, `LoginScreen`, repo 3종 교체)는 유실돼 재작성이 필요하다. `.env`도 없어져 대시보드에서 URL·anon key를 다시 받아야 한다.
+- 소셜 로그인: 카카오·구글 연동은 2026-07-30 실기기까지 확인했고 **콘솔 설정은 유지된다**. 앱 코드만 다시 붙이면 된다. 애플은 추후 추가 (iOS 앱스토어 배포 시 필수)
   - 카카오 설정값: Redirect URI `https://<project>.supabase.co/auth/v1/callback`(카카오 콘솔), 대표/사이트 도메인은 같은 주소에서 경로만 뗀 것. Client ID = 카카오 **REST API 키**. Web 플랫폼을 먼저 등록해야 Redirect URI 칸이 열린다.
   - Supabase의 카카오 provider는 기본 scope에 `account_email`이 들어간다. 이메일 동의항목이 없으면 카카오가 거부하는데(KOE205 계열), 이 프로젝트에서는 통과했다. 막힐 경우 `signInWithOAuth`의 `scopes`로 이메일을 빼면 된다 — 앱은 이메일 없는 계정을 이미 처리한다(MyScreen `user?.email || '카카오 계정'`).
 - **로그인 필수(게이트)** — 세션이 없으면 앱 본체를 마운트하지 않는다. 데이터 경로를 서버 하나로 유지 (11_ChangeLog 2026-07-29)

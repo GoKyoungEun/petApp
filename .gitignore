@@ -30,6 +30,10 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# icon sources — 1024px originals, ~36MB. tools/make-icons.js turns these into
+# the committed set in assets/icon. Keep them backed up outside the repo.
+assets/icon-src/
+
 # local env files
 .env
 .env*.local

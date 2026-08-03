@@ -2,8 +2,10 @@ import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { QueryClientProvider } from '@tanstack/react-query';
 
 import { colors } from './src/theme';
+import { queryClient } from './src/queryClient';
 import { StoreProvider, useStore } from './src/store';
 import HomeScreen from './src/screens/HomeScreen';
 import AllRecordsScreen from './src/screens/AllRecordsScreen';
@@ -14,6 +16,8 @@ import QuickRecordSheet from './src/components/QuickRecordSheet';
 import Snackbar from './src/components/Snackbar';
 import PetMenu from './src/components/PetMenu';
 import PetForm from './src/components/PetForm';
+import EditRecordSheet from './src/components/EditRecordSheet';
+import HealthPhotoSheet from './src/components/HealthPhotoSheet';
 
 function Root() {
   const { tab } = useStore();
@@ -34,8 +38,10 @@ function Root() {
       <BottomNav />
       <Snackbar />
       <QuickRecordSheet />
+      <HealthPhotoSheet />
       <PetMenu />
       <PetForm />
+      <EditRecordSheet />
     </SafeAreaView>
   );
 }
@@ -43,9 +49,12 @@ function Root() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StoreProvider>
-        <Root />
-      </StoreProvider>
+      {/* Outside StoreProvider — the store reads its data through query hooks. */}
+      <QueryClientProvider client={queryClient}>
+        <StoreProvider>
+          <Root />
+        </StoreProvider>
+      </QueryClientProvider>
     </SafeAreaProvider>
   );
 }

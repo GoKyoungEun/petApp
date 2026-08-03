@@ -1,4 +1,5 @@
 import { colors } from './theme';
+import { parseYmd, toYmd } from './date';
 
 // Species → presentation. Kept out of stored pet data so it stays derivable.
 export function speciesMeta(species) {
@@ -10,7 +11,7 @@ export function speciesMeta(species) {
 // Whole-years age from a birthDate (YYYY-MM-DD); estimated dates still work.
 export function ageYears(birthDate) {
   if (!birthDate) return null;
-  const b = new Date(birthDate);
+  const b = parseYmd(birthDate);
   if (isNaN(b.getTime())) return null;
   const now = new Date();
   let y = now.getFullYear() - b.getFullYear();
@@ -23,7 +24,7 @@ export function ageYears(birthDate) {
 export function birthDateFromAge(years) {
   const d = new Date();
   d.setFullYear(d.getFullYear() - years);
-  return d.toISOString().slice(0, 10);
+  return toYmd(d); // local calendar — toISOString() would shift a day east of UTC
 }
 
 export function petSubtitle(pet) {

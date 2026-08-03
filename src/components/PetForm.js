@@ -8,6 +8,7 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
+  KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,8 +16,8 @@ import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
 import { speciesMeta, birthDateFromAge, ageYears } from '../pets';
-
-const isValidDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime());
+import { scaled } from '../scale';
+import { isValidYmd } from '../date';
 
 export default function PetForm() {
   const { showPetForm, closePetForm, addPet, updatePet, removePet, editingPetId, pets } =
@@ -72,7 +73,7 @@ export default function PetForm() {
     }
   }, [showPetForm, editingPetId]);
 
-  const dateOk = birthMode === 'age' || isValidDate(birthText);
+  const dateOk = birthMode === 'age' || isValidYmd(birthText);
   const canSave = name.trim() !== '' && gender !== null && dateOk;
 
   const pickPhoto = async () => {
@@ -129,7 +130,11 @@ export default function PetForm() {
   return (
     <Modal visible={showPetForm} transparent animationType="slide"
       onRequestClose={closePetForm}>
-      <View style={styles.wrap}>
+      {/* The form is bottom-anchored, so on iOS the keyboard covers the 저장
+          button and the lower fields; Android already pans the window. */}
+      <KeyboardAvoidingView
+        style={styles.wrap}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.card}>
           <View style={styles.header}>
             <Text style={styles.title}>{isEdit ? '반려동물 정보 수정' : '반려동물 등록'}</Text>
@@ -138,7 +143,10 @@ export default function PetForm() {
             </Pressable>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.body}
+            keyboardShouldPersistTaps="handled">
             {/* photo */}
             <Pressable style={styles.photoWrap} onPress={pickPhoto}>
               <View style={[styles.photo, { backgroundColor: meta.bg }]}>
@@ -268,7 +276,7 @@ export default function PetForm() {
             )
           )}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -303,7 +311,7 @@ function Segmented({ options, value, onChange }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   wrap: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(20,15,10,0.34)' },
   card: {
     backgroundColor: '#fff',
@@ -411,4 +419,4 @@ const styles = StyleSheet.create({
   deleteBtn: { paddingVertical: 12, alignItems: 'center', marginTop: 4 },
   deleteText: { color: colors.badText, fontWeight: '600', fontSize: 13 },
   deleteNote: { textAlign: 'center', color: colors.textGhost, fontSize: 12, paddingVertical: 12, marginTop: 4 },
-});
+}));

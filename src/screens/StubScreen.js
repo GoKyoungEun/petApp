@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from '../Icon';
 import { colors } from '../theme';
+import { scaled } from '../scale';
 
 const INFO = {
   calendar: { icon: 'calendar', title: '캘린더', desc: '날짜별 기록을 한눈에 볼 수 있어요' },
@@ -26,7 +27,7 @@ export default function StubScreen({ name }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create(scaled({
   wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 6 },
   iconWrap: {
     width: 66,
@@ -49,4 +50,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   badgeText: { color: colors.primary, fontSize: 12, fontWeight: '700' },
-});
+}));

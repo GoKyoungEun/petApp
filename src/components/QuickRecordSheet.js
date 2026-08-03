@@ -9,26 +9,28 @@ import {
   StyleSheet,
   Animated,
   ScrollView,
+  KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import Icon from '../Icon';
 import { colors } from '../theme';
 import { useStore } from '../store';
+import { scaled } from '../scale';
+import { formatDot } from '../date';
+import { MAX_PHOTOS } from '../repository';
+import { pickRecordPhotos } from '../photo';
 
 const SYMPTOM_OPTS = [
   '식욕 저하', '기운 없음', '구토', '설사', '기침',
   '재채기', '절뚝거림', '자주 긁음', '기타',
 ];
 
-const MAX_PHOTOS = 5;
-
 // Sheets that use the two-step flow (state → photo/memo detail).
 const DETAIL_TITLE = { meal: '식사', poop: '배변', pee: '소변', vomit: '구토' };
 
 export default function QuickRecordSheet() {
   const {
-    sheet, sheetFromMore, closeSheet, openSheet, addRecord,
+    sheet, sheetFromMore, closeSheet, openSheet, addRecord, today,
     condStage, setCondStage,
     walkMin, setWalkMin, weightVal, setWeightVal,
     symptoms, toggleSymptom,
@@ -52,7 +54,9 @@ export default function QuickRecordSheet() {
 
   const backToMore = sheetFromMore ? () => openSheet('more') : undefined;
 
-  const visible = !!sheet;
+  // 'photo' is handled by HealthPhotoSheet — that record type is about the
+  // photos rather than a one-tap state, so it gets its own sheet.
+  const visible = !!sheet && sheet !== 'photo';
   const slide = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -72,24 +76,8 @@ export default function QuickRecordSheet() {
   });
 
   const pickPhoto = async () => {
-    try {
-      if (Platform.OS !== 'web') {
-        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (perm.status !== 'granted') return;
-      }
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        base64: true,
-        quality: 0.5,
-      });
-      if (!res.canceled && res.assets?.length) {
-        const a = res.assets[0];
-        const uri = a.base64 ? `data:image/jpeg;base64,${a.base64}` : a.uri;
-        setPhotos((prev) => [...prev, uri].slice(0, MAX_PHOTOS));
-      }
-    } catch (e) {
-      // cancelled / unavailable
-    }
+    const picked = await pickRecordPhotos(MAX_PHOTOS - photos.length);
+    if (picked.length) setPhotos((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
   };
 
   // Step 1 → step 2: remember the chosen record, then show the detail step.
@@ -175,130 +163,137 @@ export default function QuickRecordSheet() {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={closeSheet}>
-      <Pressable style={styles.backdrop} onPress={closeSheet} />
-      <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-        <View style={styles.grabber} />
-        <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {sheet === 'more' && (
-            <MoreSheet openSheet={openSheet} closeSheet={closeSheet} />
-          )}
+      {/* The 메모 input sits at the bottom of the sheet, so on iOS the keyboard
+          would cover it. The sheet is a flex-end child rather than absolutely
+          positioned, so KeyboardAvoidingView's inset actually lifts it. */}
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable style={styles.backdrop} onPress={closeSheet} />
+        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+          <View style={styles.grabber} />
+          <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {sheet === 'more' && (
+              <MoreSheet openSheet={openSheet} closeSheet={closeSheet} />
+            )}
 
-          {showDetail && renderDetail()}
+            {showDetail && renderDetail()}
 
-          {sheet === 'meal' && step === 'main' && (
-            <>
-              <SheetHeader title="식사" onClose={closeSheet} />
-              <View style={styles.stack}>
-                <ChoiceBtn variant="good" label="먹었어요"
-                  onPress={() => toDetail('meal', { state: '완료' }, '식사 기록되었습니다')} />
-                <ChoiceBtn variant="plain" label="안 먹었어요"
-                  onPress={() => toDetail('meal', { state: '안 먹음' }, '식사 기록되었습니다')} />
-              </View>
-              <Text style={styles.hintCenter}>먹을 때마다 눌러 횟수를 기록해요</Text>
-            </>
-          )}
+            {sheet === 'meal' && step === 'main' && (
+              <>
+                <SheetHeader title="식사" onClose={closeSheet} />
+                <View style={styles.stack}>
+                  <ChoiceBtn variant="good" label="먹었어요"
+                    onPress={() => toDetail('meal', { state: '완료' }, '식사 기록되었습니다')} />
+                  <ChoiceBtn variant="plain" label="안 먹었어요"
+                    onPress={() => toDetail('meal', { state: '안 먹음' }, '식사 기록되었습니다')} />
+                </View>
+                <Text style={styles.hintCenter}>먹을 때마다 눌러 횟수를 기록해요</Text>
+              </>
+            )}
 
-          {sheet === 'poop' && step === 'main' && (
-            <>
-              <SheetHeader title="배변" onClose={closeSheet} />
-              <View style={styles.stack}>
-                <ChoiceBtn variant="good" label="정상"
-                  onPress={() => toDetail('stool', { state: '정상' }, '배변 기록되었습니다')} />
-                <ChoiceBtn variant="warn" label="설사"
-                  onPress={() => toDetail('stool', { state: '설사' }, '배변 기록되었습니다')} />
-                <ChoiceBtn variant="bad" label="색 이상"
-                  onPress={() => toDetail('stool', { state: '색 이상' }, '배변 기록되었습니다')} />
-              </View>
-            </>
-          )}
+            {sheet === 'poop' && step === 'main' && (
+              <>
+                <SheetHeader title="배변" onClose={closeSheet} />
+                <View style={styles.stack}>
+                  <ChoiceBtn variant="good" label="정상"
+                    onPress={() => toDetail('stool', { state: '정상' }, '배변 기록되었습니다')} />
+                  <ChoiceBtn variant="warn" label="설사"
+                    onPress={() => toDetail('stool', { state: '설사' }, '배변 기록되었습니다')} />
+                  <ChoiceBtn variant="bad" label="색 이상"
+                    onPress={() => toDetail('stool', { state: '색 이상' }, '배변 기록되었습니다')} />
+                </View>
+              </>
+            )}
 
-          {sheet === 'pee' && step === 'main' && (
-            <>
-              <SheetHeader title="소변" onClose={closeSheet} />
-              <Pressable style={styles.accentBtn}
-                onPress={() => toDetail('urine', {}, '소변 기록되었습니다')}>
-                <Icon name="pee" size={17} color={colors.accentText} />
-                <Text style={styles.accentBtnText}>지금 다녀왔어요</Text>
-              </Pressable>
-            </>
-          )}
+            {sheet === 'pee' && step === 'main' && (
+              <>
+                <SheetHeader title="소변" onClose={closeSheet} />
+                <Pressable style={styles.accentBtn}
+                  onPress={() => toDetail('urine', {}, '소변 기록되었습니다')}>
+                  <Icon name="pee" size={17} color={colors.accentText} />
+                  <Text style={styles.accentBtnText}>지금 다녀왔어요</Text>
+                </Pressable>
+              </>
+            )}
 
-          {sheet === 'vomit' && step === 'main' && (
-            <>
-              <SheetHeader title="구토" onClose={closeSheet} onBack={backToMore} />
-              <ChoiceBtn variant="warn" icon="vomit" label="기록하기"
-                onPress={() => toDetail('vomit', {}, '구토 기록되었습니다')} />
-            </>
-          )}
+            {sheet === 'vomit' && step === 'main' && (
+              <>
+                <SheetHeader title="구토" onClose={closeSheet} onBack={backToMore} />
+                <ChoiceBtn variant="warn" icon="vomit" label="기록하기"
+                  onPress={() => toDetail('vomit', {}, '구토 기록되었습니다')} />
+              </>
+            )}
 
-          {sheet === 'walk' && (
-            <>
-              <SheetHeader title="산책" onClose={closeSheet} onBack={backToMore} />
-              <Stepper
-                value={<Text style={styles.stepNum}>{walkMin}<Text style={styles.stepUnit}>분</Text></Text>}
-                onMinus={() => setWalkMin(Math.max(5, walkMin - 5))}
-                onPlus={() => setWalkMin(walkMin + 5)}
-              />
-              <Text style={styles.hintCenter}>5분 단위로 조절</Text>
-              <PrimaryBtn label="기록하기"
-                onPress={() => addRecord({ recordType: 'walk', data: { minutes: walkMin } }, '산책 기록되었습니다')} />
-            </>
-          )}
+            {sheet === 'walk' && (
+              <>
+                <SheetHeader title="산책" onClose={closeSheet} onBack={backToMore} />
+                <Stepper
+                  value={<Text style={styles.stepNum}>{walkMin}<Text style={styles.stepUnit}>분</Text></Text>}
+                  onMinus={() => setWalkMin(Math.max(5, walkMin - 5))}
+                  onPlus={() => setWalkMin(walkMin + 5)}
+                />
+                <Text style={styles.hintCenter}>5분 단위로 조절</Text>
+                <PrimaryBtn label="기록하기"
+                  onPress={() => addRecord({ recordType: 'walk', data: { minutes: walkMin } }, '산책 기록되었습니다')} />
+              </>
+            )}
 
-          {sheet === 'condition' && condStage === 'main' && (
-            <>
-              <SheetHeader title="컨디션" onClose={closeSheet} onBack={backToMore} />
-              <View style={styles.stack}>
-                <ChoiceBtn variant="good" label="좋아요"
-                  onPress={() => addRecord({ recordType: 'condition', data: { level: '좋아요' } }, '컨디션 기록되었습니다')} />
-                <ChoiceBtn variant="plain" label="보통이에요"
-                  onPress={() => addRecord({ recordType: 'condition', data: { level: '보통' } }, '컨디션 기록되었습니다')} />
-                <ChoiceBtn variant="warnOutline" label="안 좋아요"
-                  onPress={() => setCondStage('symptom')} />
-              </View>
-            </>
-          )}
+            {sheet === 'condition' && condStage === 'main' && (
+              <>
+                <SheetHeader title="컨디션" onClose={closeSheet} onBack={backToMore} />
+                <View style={styles.stack}>
+                  <ChoiceBtn variant="good" label="좋아요"
+                    onPress={() => addRecord({ recordType: 'condition', data: { level: '좋아요' } }, '컨디션 기록되었습니다')} />
+                  <ChoiceBtn variant="plain" label="보통이에요"
+                    onPress={() => addRecord({ recordType: 'condition', data: { level: '보통' } }, '컨디션 기록되었습니다')} />
+                  <ChoiceBtn variant="warnOutline" label="안 좋아요"
+                    onPress={() => setCondStage('symptom')} />
+                </View>
+              </>
+            )}
 
-          {sheet === 'condition' && condStage === 'symptom' && (
-            <>
-              <SheetHeader title="어떤 증상이 있나요?" small onClose={closeSheet}
-                onBack={() => setCondStage('main')} />
-              <Text style={styles.subHint}>해당하는 항목을 모두 선택하세요</Text>
-              <View style={styles.chips}>
-                {SYMPTOM_OPTS.map((op) => {
-                  const on = symptoms.includes(op);
-                  return (
-                    <Pressable key={op} onPress={() => toggleSymptom(op)}
-                      style={[styles.chip, on && styles.chipOn]}>
-                      <Text style={[styles.chipText, on && styles.chipTextOn]}>{op}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              <PrimaryBtn label="저장"
-                onPress={() => addRecord({ recordType: 'condition', data: { level: '안 좋아요', symptoms } }, '컨디션 기록되었습니다')} />
-            </>
-          )}
+            {sheet === 'condition' && condStage === 'symptom' && (
+              <>
+                <SheetHeader title="어떤 증상이 있나요?" small onClose={closeSheet}
+                  onBack={() => setCondStage('main')} />
+                <Text style={styles.subHint}>해당하는 항목을 모두 선택하세요</Text>
+                <View style={styles.chips}>
+                  {SYMPTOM_OPTS.map((op) => {
+                    const on = symptoms.includes(op);
+                    return (
+                      <Pressable key={op} onPress={() => toggleSymptom(op)}
+                        style={[styles.chip, on && styles.chipOn]}>
+                        <Text style={[styles.chipText, on && styles.chipTextOn]}>{op}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <PrimaryBtn label="저장"
+                  onPress={() => addRecord({ recordType: 'condition', data: { level: '안 좋아요', symptoms } }, '컨디션 기록되었습니다')} />
+              </>
+            )}
 
-          {sheet === 'weight' && (
-            <>
-              <SheetHeader title="몸무게" onClose={closeSheet} onBack={backToMore} />
-              <Stepper
-                value={<Text style={styles.stepNum}>{weightVal.toFixed(1)}<Text style={styles.stepUnit}> kg</Text></Text>}
-                onMinus={() => setWeightVal(Math.round((weightVal - 0.1) * 10) / 10)}
-                onPlus={() => setWeightVal(Math.round((weightVal + 0.1) * 10) / 10)}
-              />
-              <Text style={styles.hintCenter}>측정일 · 2026. 7. 22</Text>
-              <PrimaryBtn label="저장"
-                onPress={() => addRecord({ recordType: 'weight', data: { kg: weightVal } }, '몸무게 기록되었습니다')} />
-            </>
-          )}
+            {sheet === 'weight' && (
+              <>
+                <SheetHeader title="몸무게" onClose={closeSheet} onBack={backToMore} />
+                <Stepper
+                  value={<Text style={styles.stepNum}>{weightVal.toFixed(1)}<Text style={styles.stepUnit}> kg</Text></Text>}
+                  onMinus={() => setWeightVal(Math.round((weightVal - 0.1) * 10) / 10)}
+                  onPlus={() => setWeightVal(Math.round((weightVal + 0.1) * 10) / 10)}
+                />
+                <Text style={styles.hintCenter}>측정일 · {formatDot(today)}</Text>
+                <PrimaryBtn label="저장"
+                  onPress={() => addRecord({ recordType: 'weight', data: { kg: weightVal } }, '몸무게 기록되었습니다')} />
+              </>
+            )}
 
-          {sheet === 'memo' && (
-            <MemoSheet onClose={closeSheet} onBack={backToMore} addRecord={addRecord} />
-          )}
-        </ScrollView>
-      </Animated.View>
+            {sheet === 'memo' && (
+              <MemoSheet onClose={closeSheet} onBack={backToMore} addRecord={addRecord} />
+            )}
+          </ScrollView>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -334,19 +329,34 @@ function MoreSheet({ openSheet, closeSheet }) {
       ? { key: 'walk', icon: 'walk', label: '산책' }
       : { key: 'condition', icon: 'condition', label: '컨디션' },
     { key: 'weight', icon: 'weight', label: '몸무게' },
-    { key: 'photo', icon: 'camera', label: '건강사진' },
+    { key: 'photo', icon: 'healthPhoto', label: '건강사진' },
     { key: 'memo', icon: 'memo', label: '메모' },
   ];
+  // Fixed three per row. Laying this out with a percentage width plus a gap
+  // overflowed by a pixel or two and silently dropped to two columns, and the
+  // safe percentage changes with screen width and the scale ratio — so build
+  // real rows and let flex divide them.
+  const rows = [];
+  for (let i = 0; i < items.length; i += 3) rows.push(items.slice(i, i + 3));
+
   return (
     <>
       <SheetHeader title="더보기" onClose={closeSheet} />
       <View style={styles.moreGrid}>
-        {items.map((it) => (
-          <Pressable key={it.key} style={styles.moreCell}
-            onPress={() => (it.key === 'photo' ? closeSheet() : openSheet(it.key, true))}>
-            <Icon name={it.icon} size={22} color={colors.primary} />
-            <Text style={styles.moreLabel}>{it.label}</Text>
-          </Pressable>
+        {rows.map((row, ri) => (
+          <View key={ri} style={styles.moreRow}>
+            {row.map((it) => (
+              <Pressable key={it.key} style={styles.moreCell}
+                onPress={() => openSheet(it.key, true)}>
+                <Icon name={it.icon} size={22} color={colors.primary} />
+                <Text style={styles.moreLabel}>{it.label}</Text>
+              </Pressable>
+            ))}
+            {/* keep the last row's cells the same width as a full row's */}
+            {Array.from({ length: 3 - row.length }, (_, i) => (
+              <View key={`gap${i}`} style={styles.moreFiller} />
+            ))}
+          </View>
         ))}
       </View>
     </>
@@ -414,13 +424,12 @@ function Stepper({ value, onMinus, onPlus }) {
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(20,15,10,0.34)' },
+const styles = StyleSheet.create(scaled({
+  fill: { flex: 1, justifyContent: 'flex-end' },
+  // Absolutely filled rather than flex:1, so the sheet is the only flex child
+  // and the keyboard inset lifts the sheet instead of shrinking the backdrop.
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(20,15,10,0.34)' },
   sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     maxHeight: '84%',
     backgroundColor: '#fff',
     borderTopLeftRadius: 24,
@@ -535,9 +544,11 @@ const styles = StyleSheet.create({
   },
   stepNum: { fontSize: 28, fontWeight: '800', color: colors.text },
   stepUnit: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
-  moreGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  moreGrid: { gap: 10 },
+  moreRow: { flexDirection: 'row', gap: 10 },
+  moreFiller: { flex: 1 },
   moreCell: {
-    width: '31.5%',
+    flex: 1,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surfaceMuted,
@@ -593,4 +604,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text,
   },
-});
+}));
