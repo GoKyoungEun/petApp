@@ -153,7 +153,8 @@
       "Bash(sed -i \"s|import { scheduleTitle, scheduleIcon } from '../scheduleRepo';|import { scheduleTitle, scheduleIcon } from '../schedules';|\" src/screens/CalendarScreen.js src/screens/HomeScreen.js)",
       "Bash(sed -i \"s|import { scheduleTitle, scheduleIcon } from '../scheduleRepo';|import { scheduleTitle, scheduleIcon, medicalTypeLabel, medicalTypeIcon } from '../schedules';|\" src/screens/ScheduleScreen.js)",
       "Bash(sed -i \"s|import { SCHEDULE_TYPES, REPEAT_TYPES } from '../scheduleRepo';|import { SCHEDULE_TYPES, REPEAT_TYPES } from '../schedules';|\" src/components/ScheduleForm.js)",
-      "Bash(sed -i \"s|import { SCHEDULE_TYPES } from '../scheduleRepo';|import { SCHEDULE_TYPES } from '../schedules';|\" src/components/MedicalForm.js)"
+      "Bash(sed -i \"s|import { SCHEDULE_TYPES } from '../scheduleRepo';|import { SCHEDULE_TYPES } from '../schedules';|\" src/components/MedicalForm.js)",
+      "Bash(git commit -m 'docs: 07_Roadmap 구현 현황을 8/3 기준으로 *)"
     ]
   }
 }
