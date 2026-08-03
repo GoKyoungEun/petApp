@@ -133,7 +133,13 @@
       "Bash(curl -s https://obuzyfpnvxbuuraqfphy.supabase.co/auth/v1/settings -H 'apikey: sb_publishable_Y7zotA3veF_gj_dpUUqhBg_9Qe1wTVw')",
       "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(s\\);const on=Object.entries\\(j.external||{}\\).filter\\(\\([,v]\\)=>v\\).map\\(\\([k]\\)=>k\\);console.log\\('사용 가능:',on.join\\(', '\\)\\);console.log\\('구글:',j.external?.google,'/ 카카오:',j.external?.kakao\\);}\\)\")",
       "Bash(node -e \"const os=require\\('os'\\);const n=os.networkInterfaces\\(\\);for\\(const [k,v] of Object.entries\\(n\\)\\) for\\(const i of v||[]\\) if\\(i.family==='IPv4'&&!i.internal\\) console.log\\(k,'→',i.address\\)\")",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(node -e \"console.log\\(require\\('./package.json'\\).dependencies['react-native-svg']\\)\")",
+      "Bash(sed -i \"s|'../../../../../Users/admin/Desktop/go/petApp/src/stats.js'|'file:///C:/Users/admin/Desktop/go/petApp/src/stats.js'|\" stats.test.mjs)",
+      "Bash(node stats.test.mjs)",
+      "Bash(cp \"C:/Users/admin/Desktop/go/petApp/src/date.js\" date.js)",
+      "Bash(sed \"s|from './date'|from './date.js'|\" \"C:/Users/admin/Desktop/go/petApp/src/stats.js\")",
+      "Bash(sed -i \"s|'file:///C:/Users/admin/Desktop/go/petApp/src/stats.js'|'./stats.js'|\" stats.test.mjs)"
     ]
   }
 }
