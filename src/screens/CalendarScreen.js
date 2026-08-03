@@ -9,17 +9,31 @@ import { scaled } from '../scale';
 
 const ymd = (y, m, d) => toYmd(new Date(y, m, d)); // m is 0-indexed
 
-// Build a 6-row week grid of day numbers (null for leading/trailing blanks).
-function monthGrid(year, month) {
+// Grids hold date strings, not day numbers: a week view can straddle two months
+// ("11월 30일 · 12월 1일" in one row), which a bare day number can't express.
+// null is a leading/trailing blank in the month grid.
+
+function monthRows(year, month) {
   const first = new Date(year, month, 1).getDay();
   const total = new Date(year, month + 1, 0).getDate();
   const cells = [];
   for (let i = 0; i < first; i++) cells.push(null);
-  for (let d = 1; d <= total; d++) cells.push(d);
+  for (let d = 1; d <= total; d++) cells.push(ymd(year, month, d));
   while (cells.length % 7 !== 0) cells.push(null);
   const rows = [];
   for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
   return rows;
+}
+
+// The Sunday-to-Saturday week holding `dateStr` — one row, never blank.
+function weekRows(dateStr) {
+  const d = parseYmd(dateStr);
+  const sunday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay());
+  return [
+    Array.from({ length: 7 }, (_, i) =>
+      ymd(sunday.getFullYear(), sunday.getMonth(), sunday.getDate() + i)
+    ),
+  ];
 }
 
 export default function CalendarScreen() {
@@ -33,27 +47,60 @@ export default function CalendarScreen() {
   });
   const [selected, setSelected] = useState(today);
 
+  // 'month' = 6주 격자, 'week' = 선택한 날이 든 한 주만. 주간으로 접으면 아래
+  // 날짜별 기록 패널이 그만큼 넓어진다.
+  const [mode, setMode] = useState('month');
+
   const { data: dates } = useRecordDates(petId);
   const { data: dayRecords = [] } = useRecordsByDate(petId, selected);
 
   const recordDates = useMemo(() => new Set(dates ?? []), [dates]);
-  const rows = useMemo(() => monthGrid(view.year, view.month), [view]);
+  const rows = useMemo(
+    () => (mode === 'week' ? weekRows(selected) : monthRows(view.year, view.month)),
+    [mode, selected, view]
+  );
   const items = summarizeDay(dayRecords);
 
-  const shiftMonth = (delta) => {
+  // 헤더 화살표는 보고 있는 단위만큼 움직인다 — 월간이면 한 달, 주간이면 한 주.
+  const shift = (delta) => {
+    if (mode === 'week') {
+      const d = parseYmd(selected);
+      const next = ymd(d.getFullYear(), d.getMonth(), d.getDate() + delta * 7);
+      setSelected(next);
+      // 넘어간 주가 다음 달이면 제목도 따라가야 한다.
+      const nd = parseYmd(next);
+      setView({ year: nd.getFullYear(), month: nd.getMonth() });
+      return;
+    }
     const d = new Date(view.year, view.month + delta, 1);
     setView({ year: d.getFullYear(), month: d.getMonth() });
+  };
+
+  const toggleMode = () => {
+    if (mode === 'month') {
+      // 다른 달을 넘겨보다 접으면, 선택한 날이 화면 밖이라 엉뚱한 주가 뜬다.
+      // 보고 있던 달의 1일로 옮겨 지금 보는 자리를 유지한다.
+      const d = parseYmd(selected);
+      if (d.getFullYear() !== view.year || d.getMonth() !== view.month) {
+        setSelected(ymd(view.year, view.month, 1));
+      }
+      setMode('week');
+    } else {
+      const d = parseYmd(selected);
+      setView({ year: d.getFullYear(), month: d.getMonth() });
+      setMode('month');
+    }
   };
 
   return (
     <View style={styles.wrap}>
       {/* month header */}
       <View style={styles.monthHead}>
-        <Pressable onPress={() => shiftMonth(-1)} hitSlop={10} style={styles.navBtn}>
+        <Pressable onPress={() => shift(-1)} hitSlop={10} style={styles.navBtn}>
           <Icon name="chevron-left" size={20} color={colors.textMuted} />
         </Pressable>
         <Text style={styles.monthTitle}>{view.year}년 {view.month + 1}월</Text>
-        <Pressable onPress={() => shiftMonth(1)} hitSlop={10} style={styles.navBtn}>
+        <Pressable onPress={() => shift(1)} hitSlop={10} style={styles.navBtn}>
           <Icon name="chevron-right" size={20} color={colors.textMuted} />
         </Pressable>
       </View>
@@ -69,22 +116,25 @@ export default function CalendarScreen() {
       <View style={styles.grid}>
         {rows.map((row, ri) => (
           <View key={ri} style={styles.gridRow}>
-            {row.map((day, ci) => {
-              if (day == null) return <View key={ci} style={styles.cell} />;
-              const dateStr = ymd(view.year, view.month, day);
+            {row.map((dateStr, ci) => {
+              if (dateStr == null) return <View key={ci} style={styles.cell} />;
+              const d = parseYmd(dateStr);
               const isToday = dateStr === today;
               const isSel = dateStr === selected;
               const has = recordDates.has(dateStr);
+              // 주간 보기의 한 주는 옆 달로 넘어갈 수 있다 — 그 칸은 흐리게 둔다.
+              const outside = d.getMonth() !== view.month;
               return (
                 <Pressable key={ci} style={styles.cell} onPress={() => setSelected(dateStr)}>
                   <View style={[styles.dayCircle, isSel && styles.daySelected, isToday && styles.dayToday]}>
                     <Text style={[
                       styles.dayNum,
                       ci === 0 && styles.daySun,
+                      outside && styles.dayOutside,
                       isToday && styles.dayTodayText,
                       isSel && !isToday && styles.daySelectedText,
                     ]}>
-                      {day}
+                      {d.getDate()}
                     </Text>
                   </View>
                   <View style={[styles.dot, has ? styles.dotOn : styles.dotOff]} />
@@ -94,6 +144,16 @@ export default function CalendarScreen() {
           </View>
         ))}
       </View>
+
+      {/* 월간 ↔ 주간. 주간으로 접으면 아래 기록 패널이 그만큼 넓어진다. */}
+      <Pressable style={styles.toggle} onPress={toggleMode} hitSlop={8}>
+        <Icon
+          name={mode === 'month' ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color={colors.textMuted}
+        />
+        <Text style={styles.toggleText}>{mode === 'month' ? '주간으로' : '월간으로'}</Text>
+      </Pressable>
 
       {/* legend */}
       <View style={styles.legend}>
@@ -179,11 +239,21 @@ const styles = StyleSheet.create(scaled({
   dayToday: { backgroundColor: colors.primary, borderWidth: 0 },
   dayNum: { fontSize: 14, color: colors.text, fontWeight: '600' },
   daySun: { color: '#C6524A' },
+  dayOutside: { color: colors.textGhost, fontWeight: '500' },
   dayTodayText: { color: '#fff', fontWeight: '800' },
   daySelectedText: { color: colors.primary, fontWeight: '800' },
   dot: { width: 5, height: 5, borderRadius: 3 },
   dotOn: { backgroundColor: colors.accent },
   dotOff: { backgroundColor: 'transparent' },
+  toggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingTop: 8,
+    paddingBottom: 2,
+  },
+  toggleText: { fontSize: 11, color: colors.textMuted, fontWeight: '700' },
   legend: {
     flexDirection: 'row',
     justifyContent: 'center',
