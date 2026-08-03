@@ -154,7 +154,13 @@
       "Bash(sed -i \"s|import { scheduleTitle, scheduleIcon } from '../scheduleRepo';|import { scheduleTitle, scheduleIcon, medicalTypeLabel, medicalTypeIcon } from '../schedules';|\" src/screens/ScheduleScreen.js)",
       "Bash(sed -i \"s|import { SCHEDULE_TYPES, REPEAT_TYPES } from '../scheduleRepo';|import { SCHEDULE_TYPES, REPEAT_TYPES } from '../schedules';|\" src/components/ScheduleForm.js)",
       "Bash(sed -i \"s|import { SCHEDULE_TYPES } from '../scheduleRepo';|import { SCHEDULE_TYPES } from '../schedules';|\" src/components/MedicalForm.js)",
-      "Bash(git commit -m 'docs: 07_Roadmap 구현 현황을 8/3 기준으로 *)"
+      "Bash(git commit -m 'docs: 07_Roadmap 구현 현황을 8/3 기준으로 *)",
+      "Bash(node -e \"for \\(const m of ['sharp','jimp','pngjs','canvas']\\) { try { require.resolve\\(m\\); console.log\\('  있음:', m\\); } catch { console.log\\('  없음:', m\\); } }\")",
+      "Bash(node -e *)",
+      "Bash(node __TRACKED_VAR__/recolor.js assets/icon-src/app-mark.png __TRACKED_VAR__/variants)",
+      "Bash(cp __TRACKED_VAR__/recolor.js tools/_recolor-tmp.js)",
+      "Bash(node tools/_recolor-tmp.js assets/icon-src/app-mark.png __TRACKED_VAR__/variants)",
+      "Bash(sed -i \"s/let remaining = outside.reduce\\(\\(a, b\\) => a + b, 0\\);/let remaining = outside.reduce\\(\\(a, b\\) => a + b, 0\\);\\\\n  console.log\\('  마스크 확장 후 바깥:', remaining\\);/\" tools/_recolor-tmp.js)"
     ]
   }
 }

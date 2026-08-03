@@ -51,8 +51,9 @@ Phase 브랜치에서 진행한다.
 - 기록·펫 도메인 TanStack Query (`src/queries/records.js`·`pets.js`)
 - 기록 수정·삭제 시트 (`src/components/EditRecordSheet.js`)
 - 직접 만든 일러스트 아이콘 27종 (`assets/icon`, `tools/make-icons.js`로 생성)
-- 앱 아이콘·스플래시 하트+발바닥 마크 6종 (`tools/make-app-icons.js`로 생성),
-  `expo-splash-screen` 연결 (2026-08-03)
+- 앱 아이콘·스플래시 6종 — 하트 안의 강아지·고양이 마크. 원본
+  `assets/icon-src/app-mark.png`에서 `tools/make-app-icons.js`가 생성하고,
+  청록이던 배경만 앱 primary로 옮긴다. `expo-splash-screen` 연결 (2026-08-03)
 - 건강사진 (`recordType: healthPhoto`): 더보기 → 전용 시트(카메라·갤러리
   멀티선택, 기록당 최대 6장, 저장 전 압축 1280px·JPEG q0.7, 카테고리 필수,
   메모 선택), 전체기록 탭 연결('전체'+카테고리 필터), 카드 안 3열 격자,

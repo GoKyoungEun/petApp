@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "건강일기",
-    "slug": "pet-health-diary",
+    "name": "반려장생",
+    "slug": "banryeo-jangsaeng",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "petapp",
@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FFEFD6",
+        "backgroundColor": "#B85C2E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

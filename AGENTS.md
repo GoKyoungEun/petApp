@@ -45,13 +45,12 @@ git에 담기지 않으므로 새 컴퓨터에는 따라오지 않는다.
 
 | 경로 | 내용 | 없으면 |
 |---|---|---|
-| `assets/icon-src/` | 일러스트 아이콘 1024px 원본 27개 (약 36MB) | **일러스트 27종**을 다시 생성할 수 없다. 앱 실행에는 지장 없다 — 생성본 `assets/icon/`은 커밋돼 있다. 앱 아이콘(하트+발바닥)은 원본이 없어도 만들 수 있다 |
+| `assets/icon-src/` | 일러스트 아이콘 1024px 원본 27개 (약 36MB) + 앱 마크 원본 `app-mark.png` | 아이콘을 **다시 생성할 수 없다** — 일러스트 27종도, 앱 아이콘도 원본이 있어야 한다. 앱 실행에는 지장 없다: 생성본(`assets/icon/`과 `assets/*.png`)은 커밋돼 있다 |
 | `.env` | Supabase URL·anon key | **앱이 실행되지 않는다.** 대시보드 Settings → API에서 다시 받아 `.env.example`대로 채운다 |
 | `node_modules/` | 의존성 | `npm install` |
 
 `assets/icon-src`는 저장소가 공개라 36MB를 이력에 남기지 않으려고 뺐다
-(11_ChangeLog 2026-08-02). 일러스트 아이콘을 손볼 계획이면 원본을 따로
-옮겨야 한다.
+(11_ChangeLog 2026-08-02). 아이콘을 손볼 계획이면 원본을 따로 옮겨야 한다.
 
 ## 아이콘 다시 만들기
 
@@ -66,18 +65,24 @@ node tools/make-icons.js
 여백을 잘라 정사각형으로 맞추고 128px로 줄여 `assets/icon`에 쓴다.
 파일 이름이 곧 `src/Icon.js`의 매핑 키이므로 이름을 바꾸면 그쪽도 고쳐야 한다.
 
-**앱 아이콘·스플래시(하트+발바닥 마크)** — 원본 파일이 없다. 모양이 스크립트
-안에 도형으로 들어 있어 어디서든 그냥 돌리면 된다:
+**앱 아이콘·스플래시** — `assets/icon-src/app-mark.png`(하트 안의 강아지·고양이)를
+두고:
 
 ```bash
 node tools/make-app-icons.js
 ```
 
 `assets/`의 `icon.png`, `android-icon-{foreground,background,monochrome}.png`,
-`favicon.png`, `splash-icon.png` 여섯 개를 덮어쓴다. 모양이나 색을 바꾸려면
-스크립트 위쪽 `PALETTE`·`DIAMOND`·`PAD`·`TOES` 상수를 만진다. 색은
-`src/theme.js`에서 가져오므로 팔레트를 바꿨으면 여기도 맞춘다. 왜 원본
-비트맵을 두지 않는지는 11_ChangeLog 2026-08-03.
+`favicon.png`, `splash-icon.png` 여섯 개를 덮어쓴다.
+
+원본은 청록 배경인데 앱 팔레트가 주황이라, 스크립트가 **배경 색만** 옮기고
+그림은 그대로 둔다. 배경색은 `BG` 상수(= `src/theme.js`의 primary)이고
+`app.json`의 `android.adaptiveIcon.backgroundColor`와 같아야 한다 — 다르면
+적응형 아이콘의 전경·배경 레이어가 다른 색에서 만난다.
+
+원본을 다른 그림으로 바꾸면 스크립트 위쪽 `TEAL`(배경으로 쓰인 색상 대역)을
+새 그림에 맞춰야 한다. 그 대역이 그림 안의 다른 요소와 겹치지 않는지도
+확인한다 — 겹치면 그 부분이 배경으로 오인돼 함께 파인다.
 
 # 문서 구조
 

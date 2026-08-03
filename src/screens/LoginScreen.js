@@ -41,7 +41,7 @@ export default function LoginScreen() {
     <View style={styles.wrap}>
       <View style={styles.brand}>
         <Image source={require('../../assets/icon.png')} style={styles.logo} />
-        <Text style={styles.title}>건강일기</Text>
+        <Text style={styles.title}>반려장생</Text>
         <Text style={styles.subtitle}>매일의 작은 기록이{'\n'}건강의 신호가 돼요</Text>
       </View>
 
